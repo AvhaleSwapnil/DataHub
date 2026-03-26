@@ -3,17 +3,21 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { SkeletonTable } from "@/components/SkeletonLoader";
-import { invoicesData } from "@/data/invoices";
+import { Invoice } from "@/data/invoices";
 import { customersData } from "@/data/customers";
 import { Plus, MoreHorizontal, Download, FileText, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import AdvancedFilterToolbar from "@/components/AdvancedFilterToolbar";
 import { formatCurrency, cn } from "@/lib/utils";
+import { parseQBInvoices } from "@/lib/quickbooks-parser";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function InvoicesPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
@@ -21,11 +25,29 @@ export default function InvoicesPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 600);
-    return () => clearTimeout(timer);
+    async function fetchInvoices() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const res = await fetch("http://localhost:3000/invoices");
+        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+        const data = await res.json();
+        
+        const parsedInvoices = parseQBInvoices(data);
+        setInvoices(parsedInvoices);
+      } catch (err: any) {
+        console.error("Error fetching invoices API:", err);
+        setError("Failed to load real data. Please ensure the backend is running at localhost:3000 and CORS is configured.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchInvoices();
   }, []);
 
-  const filteredInvoices = invoicesData.filter((inv) => {
+  const filteredInvoices = invoices.filter((inv) => {
     const matchesSearch = inv.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || inv.status === statusFilter;
@@ -33,7 +55,7 @@ export default function InvoicesPage() {
     
     // Simple date filter logic
     let matchesDate = true;
-    if (dateFilter !== "all") {
+    if (dateFilter !== "all" && inv.date) {
        const invDate = new Date(inv.date);
        const now = new Date();
        if (dateFilter === "this-month") {
@@ -64,6 +86,7 @@ export default function InvoicesPage() {
     <>
       <Header title="Invoices" />
       <div className="flex-1 p-8 space-y-6">
+
         
         {/* Page Header */}
         <div className="flex items-center justify-between">
@@ -118,6 +141,11 @@ export default function InvoicesPage() {
         {/* Table */}
         {isLoading ? (
           <SkeletonTable />
+        ) : error && invoices.length === 0 ? (
+          <div className="bg-red-50 text-red-600 p-6 rounded-md font-medium flex items-center gap-3 border border-red-200">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            {error}
+          </div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
             <div className="overflow-x-auto min-h-[500px]">
