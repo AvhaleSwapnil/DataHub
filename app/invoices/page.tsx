@@ -4,15 +4,20 @@ import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { SkeletonTable } from "@/components/SkeletonLoader";
 import { invoicesData } from "@/data/invoices";
-import { Search, Plus, MoreHorizontal, Filter, ListFilter, Download } from "lucide-react";
+import { customersData } from "@/data/customers";
+import { Plus, MoreHorizontal, Download, FileText, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import Pagination from "@/components/Pagination";
+import AdvancedFilterToolbar from "@/components/AdvancedFilterToolbar";
+import { formatCurrency, cn } from "@/lib/utils";
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 export default function InvoicesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [customerFilter, setCustomerFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -21,270 +26,191 @@ export default function InvoicesPage() {
   }, []);
 
   const filteredInvoices = invoicesData.filter((inv) => {
-    const matchesSearch =
-      inv.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || inv.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesSearch = inv.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || inv.status === statusFilter;
+    const matchesCustomer = customerFilter === "all" || inv.customer === customerFilter;
+    
+    // Simple date filter logic
+    let matchesDate = true;
+    if (dateFilter !== "all") {
+       const invDate = new Date(inv.date);
+       const now = new Date();
+       if (dateFilter === "this-month") {
+         matchesDate = invDate.getMonth() === now.getMonth() && invDate.getFullYear() === now.getFullYear();
+       } else if (dateFilter === "last-month") {
+         matchesDate = invDate.getMonth() === (now.getMonth() === 0 ? 11 : now.getMonth() - 1);
+       }
+    }
+
+    return matchesSearch && matchesStatus && matchesCustomer && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredInvoices.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedInvoices = filteredInvoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  const statusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      paid: "bg-primary-light/50 text-primary-dark",
-      open: "bg-accent-light-blue/30 text-accent-1",
-      overdue: "bg-negative-bg text-negative",
-      draft: "bg-bg-page text-text-muted",
+  const statusConfig = (status: string) => {
+    const configs: Record<string, { label: string; icon: any; color: string }> = {
+      paid: { label: "Fully Paid", icon: CheckCircle2, color: "bg-primary/10 text-primary-dark border-primary/20" },
+      open: { label: "Outstanding", icon: Clock, color: "bg-blue-50 text-blue-600 border-blue-100" },
+      overdue: { label: "Overdue", icon: AlertCircle, color: "bg-negative/10 text-negative border-negative/20" },
+      draft: { label: "Draft", icon: FileText, color: "bg-gray-100 text-gray-500 border-gray-200" },
     };
-    return styles[status] || "bg-bg-page text-text-muted";
+    return configs[status.toLowerCase()] || configs.draft;
   };
-
-  const totalOpen = invoicesData
-    .filter((i) => i.status === "open")
-    .reduce((sum, i) => sum + i.balance, 0);
-  const totalOverdue = invoicesData
-    .filter((i) => i.status === "overdue")
-    .reduce((sum, i) => sum + i.balance, 0);
-  const totalPaid = invoicesData
-    .filter((i) => i.status === "paid")
-    .reduce((sum, i) => sum + i.amount, 0);
 
   return (
     <>
       <Header title="Invoices" />
       <div className="flex-1 p-8 space-y-6">
-        {/* Summary Info Row */}
-        <div className="grid grid-cols-3 gap-6">
-          {[
-            {
-              label: "Open Invoices",
-              value: totalOpen,
-              count: invoicesData.filter((i) => i.status === "open").length,
-              color: "#00648F",
-              trend: "+4.2% vs last month"
-            },
-            {
-              label: "Overdue Balance",
-              value: totalOverdue,
-              count: invoicesData.filter((i) => i.status === "overdue").length,
-              color: "#C62026",
-              trend: "Critical action required"
-            },
-            {
-              label: "Paid YTD",
-              value: totalPaid,
-              count: invoicesData.filter((i) => i.status === "paid").length,
-              color: "#8bc53d",
-              trend: "85% of target reached"
-            },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className="bg-bg-card rounded-[var(--radius-card)] border border-border p-6 group transition-all duration-300 hover:translate-y-[-2px]"
-              style={{
-                boxShadow: "var(--shadow-card)",
-                borderLeft: `4px solid ${item.color}`,
-              }}
-            >
-              <p className="text-[12px] font-bold text-text-muted uppercase tracking-widest mb-2">
-                {item.label}
-              </p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-[28px] font-bold text-text-primary">
-                  {isLoading ? (
-                    <span className="skeleton inline-block h-8 w-32 rounded-md" />
-                  ) : (
-                    `$${item.value.toLocaleString("en-US", {
-                      minimumFractionDigits: 2,
-                    })}`
-                  )}
-                </p>
-                <span className="text-[12px] font-bold text-text-muted">USD</span>
-              </div>
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-border-light">
-                <span className="text-[11.5px] font-bold text-text-secondary">
-                  {item.count} Records
-                </span>
-                <span className="text-[11px] font-medium text-text-muted italic">
-                  {item.trend}
-                </span>
-              </div>
-            </div>
-          ))}
+        
+        {/* Page Header */}
+        <div className="flex items-center justify-between">
+           <div>
+              <h1 className="text-[26px] font-black text-gray-900 tracking-tighter uppercase mb-0.5">Accounts Receivable</h1>
+              <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">Track billing, payments, and revenue lifecycles</p>
+           </div>
+           <div className="flex items-center gap-3">
+              <button className="h-10 px-4 bg-white border border-gray-200 rounded-xl text-[12px] font-black text-gray-600 uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-2">
+                <Download size={14} className="text-gray-400" />
+                Export Ledger
+              </button>
+              <button className="h-10 px-6 bg-primary text-white rounded-xl text-[12px] font-black uppercase tracking-widest shadow-lg hover:bg-primary-dark transition-all flex items-center gap-2 active:scale-95">
+                <Plus size={16} />
+                Create Invoice
+              </button>
+           </div>
         </div>
 
-        {/* Toolbar */}
-        <div
-          className="bg-bg-card rounded-[var(--radius-card)] border border-border p-4 flex items-center justify-between shadow-sm"
-        >
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-              />
-              <input
-                type="text"
-                placeholder="Search invoices, customers..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="h-9 pl-9 pr-4 w-[300px] text-[13px] bg-bg-page border border-border-input rounded-[var(--radius-input)] text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
-              />
-            </div>
-            <div className="flex items-center bg-bg-page rounded-full p-1 border border-border-light">
-              {["all", "open", "overdue", "paid"].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => {
-                    setStatusFilter(status);
-                    setCurrentPage(1);
-                  }}
-                  className={`px-4 py-1.5 text-[11px] font-bold rounded-full transition-all duration-200 uppercase tracking-wider ${
-                    statusFilter === status
-                      ? "bg-white text-accent-1 shadow-sm border border-border-light"
-                      : "text-text-muted hover:text-text-secondary"
-                  }`}
-                >
-                  {status}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold text-text-secondary hover:bg-bg-page border border-transparent hover:border-border rounded-[var(--radius-button)] transition-all">
-              <Download size={15} />
-              Export
-            </button>
-            <button className="flex items-center gap-2 h-9 px-5 bg-primary text-white text-[13px] font-bold rounded-[var(--radius-button)] hover:bg-primary-dark transition-all shadow-[0_4px_12px_rgba(139,197,61,0.3)] active:scale-95">
-              <Plus size={16} />
-              New Invoice
-            </button>
-          </div>
-        </div>
+        {/* Filters */}
+        <AdvancedFilterToolbar 
+          placeholder="Search by invoice # or customer..."
+          onSearch={setSearchTerm}
+          onFilterChange={(key, val) => {
+            if (key === "status") setStatusFilter(val);
+            if (key === "date") setDateFilter(val);
+            if (key === "customer") setCustomerFilter(val);
+            setCurrentPage(1);
+          }}
+          onReset={() => {
+            setSearchTerm("");
+            setStatusFilter("all");
+            setDateFilter("all");
+            setCustomerFilter("all");
+            setCurrentPage(1);
+          }}
+          statusOptions={[
+            { label: "Paid", value: "paid" },
+            { label: "Outstanding", value: "open" },
+            { label: "Overdue", value: "overdue" },
+            { label: "Draft", value: "draft" }
+          ]}
+          dateOptions={[
+            { label: "This Month", value: "this-month" },
+            { label: "Last Month", value: "last-month" },
+            { label: "Custom Range", value: "custom" }
+          ]}
+          showCustomerFilter={true}
+          customerOptions={customersData.map(c => ({ label: c.name, value: c.name }))}
+        />
 
         {/* Table */}
         {isLoading ? (
           <SkeletonTable />
         ) : (
-          <div
-            className="bg-bg-card rounded-[var(--radius-card)] border border-border flex flex-col overflow-hidden shadow-sm"
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full">
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+            <div className="overflow-x-auto min-h-[500px]">
+              <table className="w-full border-collapse">
                 <thead>
-                  <tr className="bg-bg-page/60 border-b border-border">
-                    <th className="text-left text-[11px] font-bold text-text-muted uppercase tracking-widest py-4 px-6">
-                      Invoice / Number
-                    </th>
-                    <th className="text-left text-[11px] font-bold text-text-muted uppercase tracking-widest py-4 px-6">
-                      Customer
-                    </th>
-                    <th className="text-left text-[11px] font-bold text-text-muted uppercase tracking-widest py-4 px-6">
-                      Due Date
-                    </th>
-                    <th className="text-right text-[11px] font-bold text-text-muted uppercase tracking-widest py-4 px-6">
-                      Total Amount
-                    </th>
-                    <th className="text-right text-[11px] font-bold text-text-muted uppercase tracking-widest py-4 px-6">
-                      Balance Due
-                    </th>
-                    <th className="text-center text-[11px] font-bold text-text-muted uppercase tracking-widest py-4 px-6">
-                      Status
-                    </th>
-                    <th className="w-12" />
+                  <tr className="bg-gray-50/50 border-b border-gray-100">
+                    <th className="text-left text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-8">Audit Ref & Date</th>
+                    <th className="text-left text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Customer / Client</th>
+                    <th className="text-left text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Due Date</th>
+                    <th className="text-right text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Total Amount</th>
+                    <th className="text-right text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Balance Due</th>
+                    <th className="text-center text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Lifecycle Status</th>
+                    <th className="w-16" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border-light">
+                <tbody className="divide-y divide-gray-50">
                   {paginatedInvoices.length > 0 ? (
-                    paginatedInvoices.map((invoice) => (
-                      <tr
-                        key={invoice.id}
-                        className="group hover:bg-bg-page/40 transition-colors duration-150"
-                      >
-                        <td className="py-4 px-6">
-                          <p className="text-[13.5px] font-bold text-accent-1 hover:underline cursor-pointer">
-                            {invoice.invoiceNumber}
-                          </p>
-                          <p className="text-[11px] text-text-muted mt-0.5">
-                            Issued: {new Date(invoice.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </p>
-                        </td>
-                        <td className="py-4 px-6 text-[14px] text-text-primary font-semibold">
-                          {invoice.customer}
-                        </td>
-                        <td className="py-4 px-6 text-[13px] text-text-secondary">
-                          <span className={invoice.status === "overdue" ? "text-negative font-bold" : ""}>
-                            {new Date(invoice.dueDate).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 text-[14.5px] font-bold text-text-primary text-right">
-                          $
-                          {invoice.amount.toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td
-                          className={`py-4 px-6 text-[14.5px] font-bold text-right ${
-                            invoice.balance > 0
-                              ? "text-text-primary"
-                              : "text-text-muted"
-                          }`}
-                        >
-                          $
-                          {invoice.balance.toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <span
-                            className={`text-[10px] font-black px-2.5 py-1 rounded-full ${statusBadge(
-                              invoice.status
-                            )}`}
-                          >
-                            {invoice.status.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <button className="p-2 rounded-[8px] hover:bg-bg-page border border-transparent hover:border-border transition-all duration-150 cursor-pointer">
-                            <MoreHorizontal
-                              size={16}
-                              className="text-text-muted"
-                            />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    paginatedInvoices.map((invoice) => {
+                       const status = statusConfig(invoice.status);
+                       const StatusIcon = status.icon;
+                       return (
+                        <tr key={invoice.id} className="group hover:bg-gray-50/70 transition-colors duration-200">
+                          <td className="py-5 px-8">
+                             <div className="flex flex-col">
+                                <span className="text-[14px] font-black text-gray-900 leading-tight">#{invoice.invoiceNumber}</span>
+                                <span className="text-[12px] font-medium text-gray-400">
+                                   {new Date(invoice.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                </span>
+                             </div>
+                          </td>
+                          <td className="py-5 px-6">
+                             <span className="text-[14px] font-bold text-gray-900">{invoice.customer}</span>
+                          </td>
+                          <td className="py-5 px-6">
+                             <span className={cn(
+                               "text-[13px] font-medium",
+                               invoice.status === "overdue" ? "text-negative font-black" : "text-gray-600"
+                             )}>
+                               {new Date(invoice.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                             </span>
+                          </td>
+                          <td className="py-5 px-6 text-right tabular-nums">
+                             <span className="text-[15px] font-black text-[#000000]">
+                                {formatCurrency(invoice.amount)}
+                             </span>
+                          </td>
+                          <td className="py-5 px-6 text-right tabular-nums">
+                             <span className={cn(
+                               "text-[15px] font-black",
+                               invoice.balance > 0 ? "text-[#000000]" : "text-gray-300"
+                             )}>
+                                {formatCurrency(invoice.balance)}
+                             </span>
+                          </td>
+                          <td className="py-5 px-6 text-center">
+                             <div className={cn(
+                               "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm",
+                               status.color
+                             )}>
+                                <StatusIcon size={12} />
+                                {status.label}
+                             </div>
+                          </td>
+                          <td className="py-5 px-6 text-center">
+                             <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all cursor-pointer">
+                                <MoreHorizontal size={18} />
+                             </button>
+                          </td>
+                        </tr>
+                       );
+                    })
                   ) : (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-text-muted text-[13px]">
-                        No invoices found.
-                      </td>
+                       <td colSpan={7} className="py-24 text-center">
+                          <div className="flex flex-col items-center gap-3">
+                             <p className="text-[14px] font-black text-gray-900 uppercase tracking-tighter">No Invoices Found</p>
+                             <p className="text-[12px] text-gray-400">Adjust your filters to refine the search</p>
+                          </div>
+                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-            
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                className="border-t-0 bg-bg-card"
-              />
-            )}
+
+            <div className="p-4 bg-gray-50/30 border-t border-gray-100">
+               <Pagination
+                 currentPage={currentPage}
+                 totalPages={totalPages}
+                 onPageChange={setCurrentPage}
+                 className="bg-transparent border-0"
+               />
+            </div>
           </div>
         )}
       </div>
