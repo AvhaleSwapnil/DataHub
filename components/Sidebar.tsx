@@ -10,6 +10,7 @@ import {
   LogOut,
   LayoutDashboard,
   Link2,
+  PieChart,
 } from "lucide-react";
 
 const navItems = [
@@ -31,18 +32,14 @@ export default function Sidebar() {
       {/* Brand */}
       <div className="px-6 py-5 border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-[10px] bg-primary flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-              <path d="M8 12h8" />
-              <path d="M12 8v8" />
-            </svg>
+          <div className="w-9 h-9 rounded-[10px] bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+            <PieChart size={20} className="text-white" strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-[15px] font-bold text-accent-4 tracking-tight leading-tight">
-              ACCOUNT<span className="text-primary">HUB</span>
+            <h1 className="text-[17px] font-black text-gray-900 tracking-tighter leading-tight uppercase">
+              DATA<span className="text-primary font-black">HUB</span>
             </h1>
-            <p className="text-[10px] text-text-muted font-bold tracking-widest uppercase">
+            <p className="text-[10px] text-text-muted font-bold tracking-[0.2em] uppercase opacity-70">
               Financial Suite
             </p>
           </div>

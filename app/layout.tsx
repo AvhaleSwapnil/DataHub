@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AccountHub — Financial Suite",
+  title: "DataHub — Financial Suite",
   description:
     "Modern SaaS accounting dashboard for managing invoices, customers, balance sheets, and financial reports.",
 };
