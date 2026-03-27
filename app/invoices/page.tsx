@@ -62,7 +62,7 @@ export default function InvoicesPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[26px] font-black text-gray-900 tracking-tighter uppercase mb-0.5">Accounts Receivable</h1>
+            <h1 className="text-[26px] font-black text-gray-900 tracking-tighter mb-0.5">Accounts Receivable</h1>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -124,13 +124,13 @@ export default function InvoicesPage() {
             <div className="overflow-x-auto min-h-[500px]">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="bg-gray-50/50 border-b border-gray-100">
-                    <th className="text-left text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-8">Audit Ref & Date</th>
-                    <th className="text-left text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Customer / Client</th>
-                    <th className="text-left text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Due Date</th>
-                    <th className="text-right text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Total Amount</th>
-                    <th className="text-right text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Balance Due</th>
-                    <th className="text-center text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Lifecycle Status</th>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="text-left text-[12px] font-semibold text-slate-500 uppercase tracking-wider py-4 px-8">Audit Ref & Date</th>
+                    <th className="text-left text-[12px] font-semibold text-slate-500 uppercase tracking-wider py-4 px-6">Customer / Client</th>
+                    <th className="text-left text-[12px] font-semibold text-slate-500 uppercase tracking-wider py-4 px-6">Due Date</th>
+                    <th className="text-right text-[12px] font-semibold text-slate-500 uppercase tracking-wider py-4 px-6">Total Amount</th>
+                    <th className="text-right text-[12px] font-semibold text-slate-500 uppercase tracking-wider py-4 px-6">Balance Due</th>
+                    <th className="text-center text-[12px] font-semibold text-slate-500 uppercase tracking-wider py-4 px-6">Lifecycle Status</th>
                     <th className="w-16" />
                   </tr>
                 </thead>
@@ -140,50 +140,50 @@ export default function InvoicesPage() {
                       const status = statusConfig(invoice.status);
                       const StatusIcon = status.icon;
                       return (
-                        <tr key={invoice.id} className="group hover:bg-gray-50/70 transition-colors duration-200">
-                          <td className="py-5 px-8">
-                            <div className="flex flex-col">
-                              <span className="text-[14px] font-black text-gray-900 leading-tight">#{invoice.invoiceNumber}</span>
-                              <span className="text-[12px] font-medium text-gray-400">
+                        <tr key={invoice.id} className="group hover:bg-slate-50/50 transition-colors duration-200">
+                          <td className="py-4 px-8">
+                            <div className="flex flex-col text-slate-700">
+                              <span className="text-[14px] font-semibold leading-tight">#{invoice.invoiceNumber}</span>
+                              <span className="text-[12px] font-medium text-slate-400">
                                 {new Date(invoice.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                               </span>
                             </div>
                           </td>
-                          <td className="py-5 px-6">
-                            <span className="text-[14px] font-bold text-gray-900">{invoice.customer}</span>
+                          <td className="py-4 px-6">
+                            <span className="text-[14px] font-semibold text-slate-700">{invoice.customer}</span>
                           </td>
-                          <td className="py-5 px-6">
+                          <td className="py-4 px-6">
                             <span className={cn(
                               "text-[13px] font-medium",
-                              invoice.status === "overdue" ? "text-negative font-black" : "text-gray-600"
+                              invoice.status === "overdue" ? "text-negative font-semibold" : "text-slate-500"
                             )}>
                               {new Date(invoice.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                             </span>
                           </td>
-                          <td className="py-5 px-6 text-right tabular-nums">
-                            <span className="text-[15px] font-black text-[#000000]">
+                          <td className="py-4 px-6 text-right tabular-nums">
+                            <span className="text-[14px] font-medium text-slate-700">
                               {formatCurrency(invoice.amount)}
                             </span>
                           </td>
-                          <td className="py-5 px-6 text-right tabular-nums">
+                          <td className="py-4 px-6 text-right tabular-nums">
                             <span className={cn(
-                              "text-[15px] font-black",
-                              invoice.balance > 0 ? "text-[#000000]" : "text-gray-300"
+                              "text-[14px] font-medium",
+                              invoice.balance > 0 ? "text-slate-700" : "text-slate-300"
                             )}>
                               {formatCurrency(invoice.balance)}
                             </span>
                           </td>
-                          <td className="py-5 px-6 text-center">
+                          <td className="py-4 px-6 text-center">
                             <div className={cn(
-                              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm",
+                              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-sm",
                               status.color
                             )}>
                               <StatusIcon size={12} />
                               {status.label}
                             </div>
                           </td>
-                          <td className="py-5 px-6 text-center">
-                            <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all cursor-pointer">
+                          <td className="py-4 px-6 text-center">
+                            <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all cursor-pointer">
                               <MoreHorizontal size={18} />
                             </button>
                           </td>

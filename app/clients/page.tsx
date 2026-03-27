@@ -68,7 +68,7 @@ export default function CustomersPage() {
         {/* Top Header / Action Row */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[26px] font-black text-gray-900 tracking-tighter uppercase mb-0.5">Global Directory</h1>
+            <h1 className="text-[26px] font-black text-gray-900 tracking-tighter mb-0.5">Global Directory</h1>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -120,54 +120,54 @@ export default function CustomersPage() {
             <div className="overflow-x-auto min-h-[500px]">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="bg-gray-50/50 border-b border-gray-100">
-                    <th className="text-left text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-8">Full Name & ID</th>
-                    <th className="text-left text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Direct Contact</th>
-                    <th className="text-right text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Open Receivables</th>
-                    <th className="text-right text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Lifetime Engagement</th>
-                    <th className="text-center text-[11px] font-black text-gray-400 uppercase tracking-tighter py-5 px-6">Status</th>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="text-left text-[12px] font-semibold text-slate-500 uppercase tracking-wider py-4 px-8">Full Name & ID</th>
+                    <th className="text-left text-[12px] font-semibold text-slate-500 uppercase tracking-wider py-4 px-6">Direct Contact</th>
+                    <th className="text-right text-[12px] font-semibold text-slate-500 uppercase tracking-wider py-4 px-6">Open Receivables</th>
+                    <th className="text-right text-[12px] font-semibold text-slate-500 uppercase tracking-wider py-4 px-6">Lifetime Engagement</th>
+                    <th className="text-center text-[12px] font-semibold text-slate-500 uppercase tracking-wider py-4 px-6">Status</th>
                     <th className="w-16" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {paginatedCustomers.length > 0 ? (
                     paginatedCustomers.map((customer) => (
-                      <tr key={customer.id} className="group hover:bg-gray-50/70 transition-colors duration-200">
-                        <td className="py-5 px-8">
+                      <tr key={customer.id} className="group hover:bg-slate-50/50 transition-colors duration-200">
+                        <td className="py-4 px-8">
                           <div>
-                            <p className="text-[15px] font-black text-gray-900 group-hover:text-primary transition-colors">{customer.name}</p>
-                            <span className="inline-block mt-0.5 px-1.5 py-0.5 bg-gray-100 text-[10px] font-black text-gray-400 uppercase rounded-md tracking-widest">{customer.id}</span>
+                            <p className="text-[14px] font-semibold text-slate-700 group-hover:text-primary transition-colors">{customer.name}</p>
+                            <span className="inline-block mt-0.5 px-1.5 py-0.5 bg-slate-100 text-[10px] font-bold text-slate-400 uppercase rounded-md tracking-wider">{customer.id}</span>
                           </div>
                         </td>
-                        <td className="py-5 px-6">
+                        <td className="py-4 px-6">
                           <div className="flex flex-col">
-                            <span className="text-[13px] font-bold text-gray-900">{customer.email}</span>
-                            <span className="text-[12px] font-medium text-gray-400">{customer.phone}</span>
+                            <span className="text-[13px] font-medium text-slate-600">{customer.email}</span>
+                            <span className="text-[12px] font-medium text-slate-400">{customer.phone}</span>
                           </div>
                         </td>
-                        <td className="py-5 px-6 text-right tabular-nums">
+                        <td className="py-4 px-6 text-right tabular-nums">
                           <span className={cn(
-                            "text-[15px] font-black text-[#000000]",
+                            "text-[14px] font-medium text-slate-700",
                             customer.balance < 0 ? "text-negative" : ""
                           )}>
                             {formatCurrency(customer.balance)}
                           </span>
                         </td>
-                        <td className="py-5 px-6 text-right tabular-nums">
-                          <span className="text-[15px] font-bold text-[#000000]">
+                        <td className="py-4 px-6 text-right tabular-nums">
+                          <span className="text-[14px] font-medium text-slate-700">
                             {formatCurrency(customer.totalSpent)}
                           </span>
                         </td>
-                        <td className="py-5 px-6 text-center">
+                        <td className="py-4 px-6 text-center">
                           <span className={cn(
-                            "inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-transparent shadow-sm",
+                            "inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-transparent shadow-sm",
                             statusBadge(customer.status)
                           )}>
                             {customer.status}
                           </span>
                         </td>
-                        <td className="py-5 px-6 text-center">
-                          <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all cursor-pointer">
+                        <td className="py-4 px-6 text-center">
+                          <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all cursor-pointer">
                             <MoreHorizontal size={18} />
                           </button>
                         </td>

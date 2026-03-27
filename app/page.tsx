@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import Header from "@/components/Header";
+import { cn } from "@/lib/utils";
 import {
   FileText,
   TrendingUp,
@@ -11,6 +13,8 @@ import {
   Wallet,
   Receipt,
   PieChart,
+  Search,
+  ChevronDown,
 } from "lucide-react";
 import {
   BarChart,
@@ -229,45 +233,78 @@ export default function DashboardPage() {
 
           {/* Recent Invoices - Full Width Table */}
           <div
-            className="col-span-12 bg-bg-card rounded-[var(--radius-card)] border border-border overflow-hidden"
-            style={{ boxShadow: "var(--shadow-card)" }}
+            className="col-span-12 bg-white p-8 rounded-[16px] border border-gray-100"
+            style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.03)" }}
           >
-            <div className="p-6 border-b border-border flex items-center justify-between">
-              <h3 className="text-[16px] font-bold text-text-primary">Recent Invoices</h3>
-              <button className="text-[12px] font-bold text-primary hover:underline">Manage All Invoices</button>
+            {/* Table Header with Search and View All */}
+            <div className="space-y-6 mb-8">
+              <h2 className="text-[24px] font-bold text-gray-900">Recent Invoices</h2>
+
+              <div className="flex items-center justify-between">
+                <div className="relative w-[300px]">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <Search size={16} className="text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search invoices..."
+                    className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-[6px] text-[14px] text-gray-500 placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                  />
+                </div>
+
+                <Link href="/invoices">
+                  <button className="flex items-center gap-2 bg-[#8bc53d] hover:bg-[#7eb337] text-white px-5 py-2.5 rounded-[6px] text-[14px] font-bold transition-all shadow-sm active:scale-95">
+                    View All
+                    <div className="w-px h-4 bg-white/20 ml-1" />
+                    <ChevronDown size={16} className="text-white" />
+                  </button>
+                </Link>
+              </div>
             </div>
 
-            <div className="overflow-x-auto px-6 pb-6 pt-2">
+            <div className="overflow-x-auto border border-gray-50 rounded-[8px]">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-border-light">
-                    <th className="py-4 text-[11px] font-black text-text-muted uppercase tracking-widest">Number</th>
-                    <th className="py-4 text-[11px] font-black text-text-muted uppercase tracking-widest">Customer</th>
-                    <th className="py-4 text-[11px] font-black text-text-muted uppercase tracking-widest text-right">Amount</th>
-                    <th className="py-4 text-[11px] font-black text-text-muted uppercase tracking-widest text-center">Status</th>
-                    <th className="py-4 text-[11px] font-black text-text-muted uppercase tracking-widest">Due Date</th>
+                  <tr className="border-b border-gray-100">
+                    <th className="py-4 px-4 text-[13px] font-medium text-gray-400">ID</th>
+                    <th className="py-4 px-4 text-[13px] font-medium text-gray-400">Customer Name</th>
+                    <th className="py-4 px-4 text-[13px] font-medium text-gray-400">Reference</th>
+                    <th className="py-4 px-4 text-[13px] font-medium text-gray-400 text-right">Amount</th>
+                    <th className="py-4 px-4 text-[13px] font-medium text-gray-400">Due Date</th>
+                    <th className="py-4 px-4 text-[13px] font-medium text-gray-400 text-center w-[100px]">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border-light">
+                <tbody className="divide-y divide-gray-50">
                   {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
-                      <tr key={i}><td colSpan={5} className="py-4"><div className="skeleton h-8 w-full rounded-md" /></td></tr>
+                      <tr key={i}><td colSpan={6} className="py-4 px-4"><div className="skeleton h-8 w-full rounded-md" /></td></tr>
                     ))
                   ) : (
                     recentInvoices.map((inv, i) => (
-                      <tr key={i} className="group hover:bg-bg-page/50 transition-colors">
-                        <td className="py-4 text-[13.5px] font-bold text-accent-1 hover:underline cursor-pointer">{inv.id}</td>
-                        <td className="py-4 text-[13.5px] text-text-primary font-semibold">{inv.customer}</td>
-                        <td className="py-4 text-[14.5px] font-bold text-text-primary text-right">${inv.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
-                        <td className="py-4 text-center">
-                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${inv.status === "paid" ? "bg-primary-light/50 text-primary-dark" :
-                            inv.status === "overdue" ? "bg-negative-bg text-negative" :
-                              "bg-accent-light-blue/30 text-accent-1"
-                            }`}>
-                            {inv.status.toUpperCase()}
+                      <tr key={i} className="group hover:bg-gray-50/50 transition-colors">
+                        <td className="py-4 px-4 text-[14px] font-bold text-gray-900">
+                          {inv.id}
+                        </td>
+                        <td className="py-4 px-4 text-[14px] text-gray-600 font-medium">
+                          {inv.customer}
+                        </td>
+                        <td className="py-4 px-4 text-[14px] text-gray-400 italic">
+                          Standard Billing
+                        </td>
+                        <td className="py-4 px-4 text-right text-[15px] font-black text-[#000000]">
+                          ${inv.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-4 px-4 text-[14px] text-gray-500 font-medium">
+                          Apr 15, 2026
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className={cn(
+                            "inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold capitalize text-white",
+                            inv.status === "paid" || inv.status === "open" ? "bg-[#8bc53d]" : "bg-red-400"
+                          )}>
+                            {inv.status}
                           </span>
                         </td>
-                        <td className="py-4 text-[13px] text-text-secondary font-medium">Apr 15, 2026</td>
                       </tr>
                     ))
                   )}

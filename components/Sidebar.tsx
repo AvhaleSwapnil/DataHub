@@ -86,8 +86,8 @@ export default function Sidebar() {
             SA
           </div>
           <div className="flex-1 min-w-0 text-left">
-            <p className="text-[13.5px] font-bold text-gray-900 truncate tracking-tight leading-none">
-              Swapnil A.
+            <p className="text-[13.5px] text-gray-900 truncate tracking-tight leading-none">
+              Jhon Doe
             </p>
             <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest truncate mt-1 leading-none">Admin</p>
           </div>
