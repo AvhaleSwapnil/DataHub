@@ -1,51 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React from "react";
 import Header from "@/components/Header";
 import FinancialReport from "@/components/FinancialReport";
 import { SkeletonReportTable } from "@/components/SkeletonLoader";
-import { FinancialLine } from "@/data/balance-sheet";
-import { DetailedFinancialData, balanceSheetDetailData as fallbackDetail } from "@/data/financial-details";
-import { parseQBBalanceSheet, parseQBBalanceSheetDetails } from "@/lib/quickbooks-parser";
+import { balanceSheetDetailData as fallbackDetail } from "@/data/financial-details";
+import { useBalanceSheet } from "@/hooks/useBalanceSheet";
 
 export default function BalanceSheetPage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [reportData, setReportData] = useState<FinancialLine[]>([]);
-  const [detailedData, setDetailedData] = useState<DetailedFinancialData>({ groups: [], grandTotal: 0 });
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchBalanceSheetData() {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        // Fetch Summary Report
-        const reportRes = await fetch("http://localhost:3000/balance-sheet");
-        if (!reportRes.ok) throw new Error(`HTTP Error: ${reportRes.status}`);
-        const reportJson = await reportRes.json();
-        
-        const parsedReport = parseQBBalanceSheet(reportJson);
-        setReportData(parsedReport);
-
-        // Fetch Detailed Report
-        const detailRes = await fetch("http://localhost:3000/balance-sheet-detail");
-        if (!detailRes.ok) throw new Error(`HTTP Error: ${detailRes.status}`);
-        const detailJson = await detailRes.json();
-        
-        const parsedDetail = parseQBBalanceSheetDetails(detailJson);
-        setDetailedData(parsedDetail);
-
-      } catch (err: any) {
-        console.error("Error fetching balance sheet API:", err);
-        setError("Failed to load real data. Please ensure the backend is running at localhost:3000 and CORS is configured.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchBalanceSheetData();
-  }, []);
+  const { reportData, detailedData, isLoading, error } = useBalanceSheet();
 
   return (
     <>

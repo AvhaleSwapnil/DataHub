@@ -59,20 +59,6 @@ export default function Header({ title }: HeaderProps) {
             <Bell size={19} className="text-text-secondary" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-bg-card" />
           </button>
-
-          {/* User Avatar */}
-          <button className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 rounded-[var(--radius-input)] hover:bg-bg-page transition-colors duration-200 cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent-2 flex items-center justify-center text-white text-[12px] font-bold">
-              SA
-            </div>
-            <div className="text-left hidden lg:block">
-              <p className="text-[13px] font-semibold text-text-primary leading-tight">
-                Swapnil A.
-              </p>
-              <p className="text-[11px] text-text-muted leading-tight">Admin</p>
-            </div>
-            <ChevronDown size={14} className="text-text-muted" />
-          </button>
         </div>
       </div>
     </header>

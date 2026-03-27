@@ -97,9 +97,8 @@ export default function DashboardPage() {
             return (
               <div
                 key={i}
-                className={`bg-bg-card rounded-[var(--radius-card)] border border-border p-6 transition-all duration-300 hover:translate-y-[-2px] ${
-                  isLoading ? "opacity-0" : "opacity-100"
-                }`}
+                className={`bg-bg-card rounded-[var(--radius-card)] border border-border p-6 transition-all duration-300 hover:translate-y-[-2px] ${isLoading ? "opacity-0" : "opacity-100"
+                  }`}
                 style={{
                   boxShadow: "var(--shadow-card)",
                   transitionDelay: `${i * 100}ms`,
@@ -127,9 +126,8 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-1.5">
                   {stat.trend === "up" && <ArrowUpRight size={14} className="text-primary font-bold" />}
                   {stat.trend === "down" && <ArrowDownRight size={14} className="text-negative font-bold" />}
-                  <span className={`text-[12px] font-bold ${
-                    stat.trend === "up" ? "text-primary" : stat.trend === "down" ? "text-negative" : "text-text-muted"
-                  }`}>
+                  <span className={`text-[12px] font-bold ${stat.trend === "up" ? "text-primary" : stat.trend === "down" ? "text-negative" : "text-text-muted"
+                    }`}>
                     {stat.change}
                   </span>
                   <span className="text-[11px] text-text-muted font-medium ml-1">vs last month</span>
@@ -149,11 +147,10 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h3 className="text-[16px] font-bold text-text-primary">Financial Trends</h3>
-                <p className="text-[12px] text-text-muted mt-1">Cash flow comparison for the current quarter</p>
               </div>
               <div className="flex items-center gap-2">
-                 <button className="px-3 py-1.5 text-[11px] font-bold rounded-md bg-bg-page border border-border-light text-text-secondary hover:border-border transition-all">Export PDF</button>
-                 <button className="px-3 py-1.5 text-[11px] font-bold rounded-md bg-accent-4 text-white shadow-sm hover:bg-accent-4/90 transition-all">Full View</button>
+                <button className="px-3 py-1.5 text-[11px] font-bold rounded-md bg-bg-page border border-border-light text-text-secondary hover:border-border transition-all">Export PDF</button>
+                <button className="px-3 py-1.5 text-[11px] font-bold rounded-md bg-accent-4 text-white shadow-sm hover:bg-accent-4/90 transition-all">Full View</button>
               </div>
             </div>
 
@@ -162,31 +159,31 @@ export default function DashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border-light)" />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
                       tick={{ fill: "var(--color-text-muted)", fontSize: 11, fontWeight: 700 }}
                       dy={10}
                     />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
                       tick={{ fill: "var(--color-text-muted)", fontSize: 11, fontWeight: 700 }}
                     />
-                    <Tooltip 
+                    <Tooltip
                       cursor={{ fill: 'var(--color-bg-page)', radius: 4 }}
-                      contentStyle={{ 
-                        borderRadius: 'var(--radius-card)', 
+                      contentStyle={{
+                        borderRadius: 'var(--radius-card)',
                         border: '1px solid var(--color-border)',
                         boxShadow: 'var(--shadow-card)',
                         fontSize: '12px',
                         padding: '12px'
                       }}
                     />
-                    <Legend 
-                      verticalAlign="top" 
-                      align="right" 
+                    <Legend
+                      verticalAlign="top"
+                      align="right"
                       iconType="circle"
                       wrapperStyle={{ paddingBottom: '20px', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}
                     />
@@ -213,7 +210,7 @@ export default function DashboardPage() {
               <h3 className="text-[16px] font-bold text-text-primary">Monthly Insight</h3>
               <PieChart size={18} className="text-primary" />
             </div>
-            
+
             <div className="flex-1 space-y-4">
               {[
                 { label: "Operating Margin", value: "33.1%", color: "#8bc53d", desc: "Healthy profit range" },
@@ -222,15 +219,15 @@ export default function DashboardPage() {
               ].map((item, i) => (
                 <div key={i} className="p-4 rounded-[16px] border border-border-light hover:border-primary/20 transition-all group">
                   <div className="flex items-center justify-between mb-1.5">
-                     <span className="text-[11px] font-black text-text-muted uppercase tracking-widest">{item.label}</span>
-                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-[11px] font-black text-text-muted uppercase tracking-widest">{item.label}</span>
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
                   </div>
                   <p className="text-[20px] font-bold text-text-primary mb-1">{item.value}</p>
                   <p className="text-[12px] text-text-secondary">{item.desc}</p>
                 </div>
               ))}
             </div>
-            
+
             <button className="w-full mt-6 py-3 bg-bg-page hover:bg-border-light border border-border text-[12px] font-bold text-text-primary rounded-[var(--radius-button)] transition-all">
               Comprehensive Audit Info
             </button>
@@ -245,7 +242,7 @@ export default function DashboardPage() {
               <h3 className="text-[16px] font-bold text-text-primary">Recent Invoices</h3>
               <button className="text-[12px] font-bold text-primary hover:underline">Manage All Invoices</button>
             </div>
-            
+
             <div className="overflow-x-auto px-6 pb-6 pt-2">
               <table className="w-full text-left">
                 <thead>
@@ -269,11 +266,10 @@ export default function DashboardPage() {
                         <td className="py-4 text-[13.5px] text-text-primary font-semibold">{inv.customer}</td>
                         <td className="py-4 text-[14.5px] font-bold text-text-primary text-right">${inv.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
                         <td className="py-4 text-center">
-                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${
-                            inv.status === "paid" ? "bg-primary-light/50 text-primary-dark" :
+                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${inv.status === "paid" ? "bg-primary-light/50 text-primary-dark" :
                             inv.status === "overdue" ? "bg-negative-bg text-negative" :
-                            "bg-accent-light-blue/30 text-accent-1"
-                          }`}>
+                              "bg-accent-light-blue/30 text-accent-1"
+                            }`}>
                             {inv.status.toUpperCase()}
                           </span>
                         </td>

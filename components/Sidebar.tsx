@@ -15,7 +15,7 @@ import {
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/customers", label: "Customers", icon: Users },
+  { href: "/clients", label: "Clients", icon: Users },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/balance-sheet", label: "Balance Sheet", icon: BarChart3 },
   { href: "/profit-loss", label: "Profit & Loss", icon: TrendingUp },
@@ -39,9 +39,6 @@ export default function Sidebar() {
             <h1 className="text-[17px] font-black text-gray-900 tracking-tighter leading-tight uppercase">
               DATA<span className="text-primary font-black">HUB</span>
             </h1>
-            <p className="text-[10px] text-text-muted font-bold tracking-[0.2em] uppercase opacity-70">
-              Financial Suite
-            </p>
           </div>
         </div>
       </div>
@@ -71,8 +68,8 @@ export default function Sidebar() {
               <Icon
                 size={18}
                 className={`transition-colors duration-200 ${isActive
-                    ? "text-primary"
-                    : "text-text-muted group-hover:text-text-secondary"
+                  ? "text-primary"
+                  : "text-text-muted group-hover:text-text-secondary"
                   }`}
               />
               {item.label}
@@ -82,9 +79,22 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 pb-4 border-t border-border pt-3">
-        <button className="flex items-center gap-3 px-4 py-2.5 w-full rounded-[var(--radius-input)] text-[13.5px] font-medium text-text-secondary hover:bg-negative-bg hover:text-negative transition-all duration-200 cursor-pointer">
-          <LogOut size={18} />
+      <div className="px-3 pb-4 border-t border-border pt-4">
+        {/* User Profile */}
+        <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-[var(--radius-input)] hover:bg-bg-sidebar-hover cursor-pointer transition-colors duration-200">
+          <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-primary to-accent-2 flex items-center justify-center text-white text-[14px] font-bold shadow-sm">
+            SA
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <p className="text-[13.5px] font-bold text-gray-900 truncate tracking-tight leading-none">
+              Swapnil A.
+            </p>
+            <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest truncate mt-1 leading-none">Admin</p>
+          </div>
+        </div>
+
+        <button className="flex items-center gap-3 px-4 py-2 w-full rounded-[var(--radius-input)] text-[13px] font-black uppercase tracking-widest text-text-secondary hover:bg-negative/10 hover:text-negative transition-all duration-200 cursor-pointer">
+          <LogOut size={16} strokeWidth={2.5} />
           Logout
         </button>
       </div>

@@ -1,71 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Header from "@/components/Header";
 import { SkeletonTable } from "@/components/SkeletonLoader";
-import { Invoice } from "@/data/invoices";
 import { customersData } from "@/data/customers";
 import { Plus, MoreHorizontal, Download, FileText, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import AdvancedFilterToolbar from "@/components/AdvancedFilterToolbar";
 import { formatCurrency, cn } from "@/lib/utils";
-import { parseQBInvoices } from "@/lib/quickbooks-parser";
+import { useInvoices } from "@/hooks/useInvoices";
+import { filterInvoices } from "@/lib/filters";
+import { exportToCSV } from "@/lib/exportCSV";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function InvoicesPage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  
+  const { invoices, isLoading, error } = useInvoices();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [customerFilter, setCustomerFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    async function fetchInvoices() {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const res = await fetch("http://localhost:3000/invoices");
-        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-        const data = await res.json();
-        
-        const parsedInvoices = parseQBInvoices(data);
-        setInvoices(parsedInvoices);
-      } catch (err: any) {
-        console.error("Error fetching invoices API:", err);
-        setError("Failed to load real data. Please ensure the backend is running at localhost:3000 and CORS is configured.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchInvoices();
-  }, []);
-
-  const filteredInvoices = invoices.filter((inv) => {
-    const matchesSearch = inv.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || inv.status === statusFilter;
-    const matchesCustomer = customerFilter === "all" || inv.customer === customerFilter;
-    
-    // Simple date filter logic
-    let matchesDate = true;
-    if (dateFilter !== "all" && inv.date) {
-       const invDate = new Date(inv.date);
-       const now = new Date();
-       if (dateFilter === "this-month") {
-         matchesDate = invDate.getMonth() === now.getMonth() && invDate.getFullYear() === now.getFullYear();
-       } else if (dateFilter === "last-month") {
-         matchesDate = invDate.getMonth() === (now.getMonth() === 0 ? 11 : now.getMonth() - 1);
-       }
-    }
-
-    return matchesSearch && matchesStatus && matchesCustomer && matchesDate;
+  const filteredInvoices = filterInvoices(invoices, {
+    searchTerm,
+    statusFilter,
+    dateFilter,
+    customerFilter
   });
 
   const totalPages = Math.ceil(filteredInvoices.length / ITEMS_PER_PAGE);
@@ -83,35 +45,12 @@ export default function InvoicesPage() {
   };
 
   const handleExportCSV = () => {
-    if (filteredInvoices.length === 0) return;
-    
-    const headers = ["Invoice Number", "Customer", "Date", "Due Date", "Status", "Total Amount", "Balance Due"];
-    const csvRows = [headers.join(",")];
-    
-    for (const inv of filteredInvoices) {
-      const escape = (str: string | number) => `"${String(str || "").replace(/"/g, '""')}"`;
-      const row = [
-        escape(inv.invoiceNumber),
-        escape(inv.customer),
-        escape(inv.date),
-        escape(inv.dueDate),
-        escape(inv.status),
-        escape(inv.amount),
-        escape(inv.balance)
-      ].join(",");
-      csvRows.push(row);
-    }
-    
-    const csvString = csvRows.join("\n");
-    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `invoices_export_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportToCSV(
+      filteredInvoices,
+      ["Invoice Number", "Customer", "Date", "Due Date", "Status", "Total Amount", "Balance Due"],
+      "invoices_export",
+      (inv) => [inv.invoiceNumber, inv.customer, inv.date, inv.dueDate, inv.status, inv.amount, inv.balance]
+    );
   };
 
   return (
@@ -119,30 +58,29 @@ export default function InvoicesPage() {
       <Header title="Invoices" />
       <div className="flex-1 p-8 space-y-6">
 
-        
+
         {/* Page Header */}
         <div className="flex items-center justify-between">
-           <div>
-              <h1 className="text-[26px] font-black text-gray-900 tracking-tighter uppercase mb-0.5">Accounts Receivable</h1>
-              <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">Track billing, payments, and revenue lifecycles</p>
-           </div>
-           <div className="flex items-center gap-3">
-              <button 
-                onClick={handleExportCSV}
-                className="h-10 px-4 bg-white border border-gray-200 rounded-xl text-[12px] font-black text-gray-600 uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-2"
-              >
-                <Download size={14} className="text-gray-400" />
-                Export Ledger
-              </button>
-              <button className="h-10 px-6 bg-primary text-white rounded-xl text-[12px] font-black uppercase tracking-widest shadow-lg hover:bg-primary-dark transition-all flex items-center gap-2 active:scale-95">
-                <Plus size={16} />
-                Create Invoice
-              </button>
-           </div>
+          <div>
+            <h1 className="text-[26px] font-black text-gray-900 tracking-tighter uppercase mb-0.5">Accounts Receivable</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExportCSV}
+              className="h-10 px-4 bg-white border border-gray-200 rounded-xl text-[12px] font-black text-gray-600 uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-2"
+            >
+              <Download size={14} className="text-gray-400" />
+              Export Ledger
+            </button>
+            <button className="h-10 px-6 bg-primary text-white rounded-xl text-[12px] font-black uppercase tracking-widest shadow-lg hover:bg-primary-dark transition-all flex items-center gap-2 active:scale-95">
+              <Plus size={16} />
+              Create Invoice
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
-        <AdvancedFilterToolbar 
+        <AdvancedFilterToolbar
           placeholder="Search by invoice # or customer..."
           onSearch={setSearchTerm}
           onFilterChange={(key, val) => {
@@ -199,67 +137,67 @@ export default function InvoicesPage() {
                 <tbody className="divide-y divide-gray-50">
                   {paginatedInvoices.length > 0 ? (
                     paginatedInvoices.map((invoice) => {
-                       const status = statusConfig(invoice.status);
-                       const StatusIcon = status.icon;
-                       return (
+                      const status = statusConfig(invoice.status);
+                      const StatusIcon = status.icon;
+                      return (
                         <tr key={invoice.id} className="group hover:bg-gray-50/70 transition-colors duration-200">
                           <td className="py-5 px-8">
-                             <div className="flex flex-col">
-                                <span className="text-[14px] font-black text-gray-900 leading-tight">#{invoice.invoiceNumber}</span>
-                                <span className="text-[12px] font-medium text-gray-400">
-                                   {new Date(invoice.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                </span>
-                             </div>
+                            <div className="flex flex-col">
+                              <span className="text-[14px] font-black text-gray-900 leading-tight">#{invoice.invoiceNumber}</span>
+                              <span className="text-[12px] font-medium text-gray-400">
+                                {new Date(invoice.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                              </span>
+                            </div>
                           </td>
                           <td className="py-5 px-6">
-                             <span className="text-[14px] font-bold text-gray-900">{invoice.customer}</span>
+                            <span className="text-[14px] font-bold text-gray-900">{invoice.customer}</span>
                           </td>
                           <td className="py-5 px-6">
-                             <span className={cn(
-                               "text-[13px] font-medium",
-                               invoice.status === "overdue" ? "text-negative font-black" : "text-gray-600"
-                             )}>
-                               {new Date(invoice.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                             </span>
+                            <span className={cn(
+                              "text-[13px] font-medium",
+                              invoice.status === "overdue" ? "text-negative font-black" : "text-gray-600"
+                            )}>
+                              {new Date(invoice.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
                           </td>
                           <td className="py-5 px-6 text-right tabular-nums">
-                             <span className="text-[15px] font-black text-[#000000]">
-                                {formatCurrency(invoice.amount)}
-                             </span>
+                            <span className="text-[15px] font-black text-[#000000]">
+                              {formatCurrency(invoice.amount)}
+                            </span>
                           </td>
                           <td className="py-5 px-6 text-right tabular-nums">
-                             <span className={cn(
-                               "text-[15px] font-black",
-                               invoice.balance > 0 ? "text-[#000000]" : "text-gray-300"
-                             )}>
-                                {formatCurrency(invoice.balance)}
-                             </span>
+                            <span className={cn(
+                              "text-[15px] font-black",
+                              invoice.balance > 0 ? "text-[#000000]" : "text-gray-300"
+                            )}>
+                              {formatCurrency(invoice.balance)}
+                            </span>
                           </td>
                           <td className="py-5 px-6 text-center">
-                             <div className={cn(
-                               "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm",
-                               status.color
-                             )}>
-                                <StatusIcon size={12} />
-                                {status.label}
-                             </div>
+                            <div className={cn(
+                              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm",
+                              status.color
+                            )}>
+                              <StatusIcon size={12} />
+                              {status.label}
+                            </div>
                           </td>
                           <td className="py-5 px-6 text-center">
-                             <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all cursor-pointer">
-                                <MoreHorizontal size={18} />
-                             </button>
+                            <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all cursor-pointer">
+                              <MoreHorizontal size={18} />
+                            </button>
                           </td>
                         </tr>
-                       );
+                      );
                     })
                   ) : (
                     <tr>
-                       <td colSpan={7} className="py-24 text-center">
-                          <div className="flex flex-col items-center gap-3">
-                             <p className="text-[14px] font-black text-gray-900 uppercase tracking-tighter">No Invoices Found</p>
-                             <p className="text-[12px] text-gray-400">Adjust your filters to refine the search</p>
-                          </div>
-                       </td>
+                      <td colSpan={7} className="py-24 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <p className="text-[14px] font-black text-gray-900 uppercase tracking-tighter">No Invoices Found</p>
+                          <p className="text-[12px] text-gray-400">Adjust your filters to refine the search</p>
+                        </div>
+                      </td>
                     </tr>
                   )}
                 </tbody>
@@ -267,12 +205,12 @@ export default function InvoicesPage() {
             </div>
 
             <div className="p-4 bg-gray-50/30 border-t border-gray-100">
-               <Pagination
-                 currentPage={currentPage}
-                 totalPages={totalPages}
-                 onPageChange={setCurrentPage}
-                 className="bg-transparent border-0"
-               />
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                className="bg-transparent border-0"
+              />
             </div>
           </div>
         )}
