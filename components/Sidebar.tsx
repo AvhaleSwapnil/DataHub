@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,6 +15,7 @@ import {
   Briefcase,
   Settings,
   BarChart,
+  MoreHorizontal,
 } from "lucide-react";
 
 const navItems = [
@@ -26,6 +28,18 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <aside
@@ -84,9 +98,12 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 pb-4 border-t border-border pt-4">
+      <div className="px-3 pb-4 border-t border-border pt-4 relative" ref={menuRef}>
         {/* User Profile */}
-        <div className="flex items-center gap-3 px-3 py-2.5 mb-1 rounded-md hover:bg-bg-sidebar-hover cursor-pointer transition-colors duration-200">
+        <div 
+          onClick={() => setShowProfileMenu(!showProfileMenu)}
+          className="flex items-center gap-3 px-3 py-2.5 mb-1 rounded-md hover:bg-bg-sidebar-hover cursor-pointer transition-colors duration-200 group"
+        >
           <div className="w-8 h-8 shrink-0 rounded-full bg-primary flex items-center justify-center text-white text-[12px] font-semibold">
             SA
           </div>
@@ -96,12 +113,29 @@ export default function Sidebar() {
             </p>
             <p className="text-[12px] text-text-muted truncate mt-1 leading-none">Administrator</p>
           </div>
+          <button className="text-text-muted hover:text-text-primary transition-colors">
+            <MoreHorizontal size={16} />
+          </button>
         </div>
 
-        <button className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-[14px] font-medium text-text-secondary hover:bg-negative/10 hover:text-negative transition-all duration-200 cursor-pointer">
-          <LogOut size={16} strokeWidth={2} />
-          Logout
-        </button>
+        {/* Profile Dropdown */}
+        {showProfileMenu && (
+          <div 
+            className="absolute bottom-[60px] left-3 right-3 bg-bg-card rounded-md border border-border overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200"
+            style={{ boxShadow: "var(--shadow-dropdown)" }}
+          >
+            <button 
+              className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-negative hover:bg-negative/10 transition-colors"
+              onClick={() => {
+                // handle logout
+                setShowProfileMenu(false);
+              }}
+            >
+              <LogOut size={16} />
+              Logout
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );
