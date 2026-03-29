@@ -16,7 +16,7 @@ import { DetailedFinancialData } from "@/data/financial-details";
 
 interface FinancialReportProps {
   data: FinancialLine[];
-  detailedData?: DetailedFinancialData;
+  detailedData?: DetailedFinancialData | null;
   title: string;
   subtitle?: string;
   hideToolbar?: boolean;
@@ -86,8 +86,8 @@ const ReportRow = ({ line, depth = 0 }: { line: FinancialLine; depth: number }) 
 
       {hasChildren && isOpen && (
         <div className="flex flex-col">
-          {line.children!.map((child) => (
-            <ReportRow key={child.id} line={child} depth={depth + 1} />
+          {line.children?.map((child, idx) => (
+            <ReportRow key={child.id || `row-${depth}-${idx}`} line={child} depth={depth + 1} />
           ))}
         </div>
       )}
@@ -110,7 +110,7 @@ export default function FinancialReport({
   const activeSubtitle = period === "Custom Range" ? `${customRange.start} - ${customRange.end}` : period;
 
   return (
-    <div className="flex flex-col h-full bg-bg-card rounded-xl border border-border overflow-hidden" style={{ boxShadow: "var(--shadow-card)" }}>
+    <div className="flex flex-col h-full card-base overflow-hidden">
       {/* Professional Sticky Toolbar */}
       {!hideToolbar && (
         <div className="sticky top-0 z-20 bg-bg-card border-b border-border px-6 py-4 flex items-center justify-between">
@@ -165,14 +165,14 @@ export default function FinancialReport({
                       type="date"
                       value={customRange.start}
                       onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })}
-                      className="h-10 px-3 bg-bg-card border border-border-input rounded-md text-[13px] text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="input-base h-10 w-[140px]"
                     />
                     <span className="text-text-muted text-[12px]">to</span>
                     <input
                       type="date"
                       value={customRange.end}
                       onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })}
-                      className="h-10 px-3 bg-bg-card border border-border-input rounded-md text-[13px] text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="input-base h-10 w-[140px]"
                     />
                   </div>
                 )}
@@ -204,7 +204,7 @@ export default function FinancialReport({
               </div>
             </div>
 
-            <button className="self-end mb-0.5 h-10 px-5 bg-primary text-white text-[14px] font-semibold rounded-md hover:bg-primary-dark transition-all active:scale-[0.98]">
+            <button className="btn-primary self-end mb-0.5">
               Run Report
             </button>
           </div>
@@ -220,7 +220,7 @@ export default function FinancialReport({
       {/* Report Content */}
       {viewMode === "summary" ? (
         <div className="flex-1 overflow-y-auto bg-bg-page/50 p-10 lg:p-16">
-          <div className="max-w-4xl mx-auto bg-bg-card p-10 border border-border min-h-[1000px] flex flex-col rounded-sm" style={{ boxShadow: "var(--shadow-card)" }}>
+          <div className="max-w-4xl mx-auto card-base p-10 min-h-[1000px] flex flex-col rounded-sm">
             {/* Company Branding */}
             <div className="flex flex-col items-center mb-12 relative">
               <div className="w-12 h-1 bg-primary rounded-full mb-6" />
@@ -241,9 +241,15 @@ export default function FinancialReport({
 
             {/* Main Report Body */}
             <div className="flex-1 py-4">
-              {data.map((category) => (
-                <ReportRow key={category.id} line={category} depth={0} />
-              ))}
+              {Array.isArray(data) && data.length > 0 ? (
+                data.map((category, idx) => (
+                  <ReportRow key={category.id || `cat-${idx}`} line={category} depth={0} />
+                ))
+              ) : (
+                <div className="py-20 text-center text-text-muted italic">
+                  No report data found for this period.
+                </div>
+              )}
             </div>
 
             {/* Footer */}

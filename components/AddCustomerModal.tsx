@@ -72,8 +72,8 @@ export default function AddClientModal({ isOpen, onClose, onAdd }: AddClientModa
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   className={cn(
-                    "w-full h-10 px-3 bg-bg-card border rounded-md text-[14px] transition-all focus:outline-none focus:ring-1 focus:ring-primary",
-                    errors.name ? "border-negative" : "border-border-input focus:border-primary"
+                    "input-base",
+                    errors.name ? "border-negative" : ""
                   )}
                 />
                 {errors.name && <p className="text-[12px] text-negative">{errors.name}</p>}
@@ -88,7 +88,7 @@ export default function AddClientModal({ isOpen, onClose, onAdd }: AddClientModa
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full h-10 pl-9 pr-3 bg-bg-card border border-border-input rounded-md text-[14px] transition-all focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                      className="input-base pl-9 h-10"
                     />
                   </div>
                 </div>
@@ -100,7 +100,7 @@ export default function AddClientModal({ isOpen, onClose, onAdd }: AddClientModa
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="w-full h-10 pl-9 pr-3 bg-bg-card border border-border-input rounded-md text-[14px] transition-all focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                      className="input-base pl-9 h-10"
                     />
                   </div>
                 </div>
@@ -118,7 +118,7 @@ export default function AddClientModal({ isOpen, onClose, onAdd }: AddClientModa
                rows={3}
                value={formData.address}
                onChange={(e) => setFormData({...formData, address: e.target.value})}
-               className="w-full p-3 bg-bg-card border border-border-input rounded-md text-[14px] transition-all focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
+               className="input-base h-auto py-3 resize-none"
              />
           </div>
 
@@ -132,22 +132,22 @@ export default function AddClientModal({ isOpen, onClose, onAdd }: AddClientModa
                rows={4}
                value={formData.notes}
                onChange={(e) => setFormData({...formData, notes: e.target.value})}
-               className="w-full p-3 bg-bg-card border border-border-input rounded-md text-[14px] transition-all focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
+               className="input-base h-auto py-3 resize-none"
              />
           </div>
 
           {/* Footer Actions */}
-          <div className="pt-6 border-t border-border flex items-center justify-end gap-3 sticky bottom-0 bg-bg-card pb-6 mt-auto">
+          <div className="pt-6 border-t border-border flex items-center justify-end gap-3 sticky bottom-3 bg-bg-card pb-6 mt-auto">
              <button 
                type="button"
                onClick={onClose}
-               className="px-4 h-10 text-[14px] font-medium text-text-muted hover:text-text-primary transition-colors"
+               className="btn-secondary border-none hover:bg-transparent"
              >
                Discard
              </button>
              <button 
                type="submit"
-               className="px-5 h-10 bg-primary text-white text-[14px] font-semibold rounded-md hover:bg-primary-dark transition-all active:scale-[0.98]"
+               className="btn-primary px-8"
              >
                Add Client
              </button>

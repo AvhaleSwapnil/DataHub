@@ -135,3 +135,43 @@ body {
   z-index: 10;
   background: var(--color-bg-card);
 }
+
+@layer components {
+  /* Reusable Component Classes */
+  .card-base {
+    @apply bg-bg-card rounded-xl border border-border transition-all duration-300;
+    box-shadow: var(--shadow-card);
+  }
+  
+  .card-p {
+    @apply p-6;
+  }
+
+  .btn-primary {
+    @apply h-10 px-4 bg-primary text-white text-[14px] font-semibold rounded-md hover:bg-primary-dark transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply h-10 px-4 bg-bg-card border border-border rounded-md text-[14px] font-medium text-text-primary hover:bg-bg-page transition-colors flex items-center justify-center gap-2;
+  }
+
+  .btn-negative {
+    @apply h-10 px-4 text-[14px] font-medium text-negative border border-negative/30 rounded-md hover:bg-negative-bg transition-all flex items-center justify-center gap-2;
+  }
+
+  .input-base {
+    @apply w-full h-10 px-3 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all;
+  }
+
+  .page-container {
+    @apply flex flex-col h-full bg-bg-page;
+  }
+
+  .page-content {
+    @apply flex-1 p-6 space-y-6 overflow-y-auto;
+  }
+
+  .page-title {
+    @apply text-[24px] font-bold text-text-primary mb-6;
+  }
+}

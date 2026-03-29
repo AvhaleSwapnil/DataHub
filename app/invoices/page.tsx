@@ -61,11 +61,11 @@ export default function InvoicesPage() {
 
         {/* Page Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-[24px] font-bold text-text-primary">Invoices</h1>
+          <h1 className="page-title mb-0">Invoices</h1>
           <div className="flex items-center gap-3">
             <button
               onClick={handleExportCSV}
-              className="h-10 px-4 bg-bg-card border border-border rounded-md text-[14px] font-medium text-text-secondary hover:bg-bg-page transition-all flex items-center gap-2"
+              className="btn-secondary"
             >
               <Download size={16} className="text-text-muted" />
               Export Ledger
@@ -114,7 +114,7 @@ export default function InvoicesPage() {
             {error}
           </div>
         ) : (
-          <div className="bg-bg-card rounded-xl border border-border overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <div className="card-base overflow-hidden">
             <div className="overflow-x-auto min-h-[500px]">
               <table className="w-full border-collapse">
                 <thead>

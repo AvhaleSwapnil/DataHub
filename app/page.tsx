@@ -24,7 +24,10 @@ import {
   Package,
   ArrowUpFromLine,
   Landmark,
-  Users
+  Users,
+  CheckCircle2,
+  Clock,
+  AlertCircle
 } from "lucide-react";
 import {
   BarChart,
@@ -37,17 +40,11 @@ import {
   Legend,
   Cell,
 } from "recharts";
-import { fetchDashboardKPIs } from "@/services/reportService";
+import { fetchDashboardKPIs, fetchFinancialTrends } from "@/services/reportService";
 import { fetchCustomers } from "@/services/customerService";
 import { fetchInvoices } from "@/services/invoiceService";
-const chartData = [
-  { name: "Jan", revenue: 65, expenses: 40 },
-  { name: "Feb", revenue: 45, expenses: 35 },
-  { name: "Mar", revenue: 85, expenses: 50 },
-  { name: "Apr", revenue: 55, expenses: 45 },
-  { name: "May", revenue: 70, expenses: 30 },
-  { name: "Jun", revenue: 95, expenses: 60 },
-];
+import { getProfitAndLoss } from "@/services/financialReportService";
+
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -55,6 +52,9 @@ export default function DashboardPage() {
   const [dynamicStats, setDynamicStats] = useState<any[]>([]);
   const [customersData, setCustomersData] = useState<any[]>([]);
   const [invoicesData, setInvoicesData] = useState<any[]>([]);
+  const [chartDataState, setChartDataState] = useState<any[]>([]);
+  const [monthlyInsights, setMonthlyInsights] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     setIsClient(true);
@@ -62,10 +62,12 @@ export default function DashboardPage() {
 
     async function loadAllData() {
       try {
-        const [kpiData, custsData, invsData] = await Promise.all([
+        const [kpiData, custsData, invsData, plData, trendData] = await Promise.all([
           fetchDashboardKPIs(),
           fetchCustomers(),
-          fetchInvoices()
+          fetchInvoices(),
+          getProfitAndLoss().catch(() => []),
+          fetchFinancialTrends().catch(() => [])
         ]);
 
         if (isMounted) {
@@ -79,6 +81,7 @@ export default function DashboardPage() {
 
           setCustomersData(custs);
           setInvoicesData(invs);
+          setChartDataState(trendData);
 
           let totalRevenue = 0;
           let outstandingCount = 0;
@@ -92,28 +95,50 @@ export default function DashboardPage() {
 
           const totalCustomers = custs.length;
 
-          const baseMap = kpiData.map(stat => {
+          const finalMap = kpiData.map(stat => {
             if (stat.label === "Total Revenue") {
               return { ...stat, value: "$" + totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) };
-            }
-            if (stat.label === "Outstanding Invoices") {
-              return { ...stat, value: outstandingCount.toString() + " invoices" };
             }
             return stat;
           });
 
-          if (!baseMap.some(s => s.label === "Total Customers")) {
-            baseMap.splice(3, 0, {
-              label: "Total Customers",
-              value: totalCustomers.toString(),
-              change: "Active",
-              trend: "neutral" as const,
-              icon: Users,
-              color: "#00B0F0"
-            });
-          }
+          let totalExpenses = 0;
+          const findExpenses = (lines: any[]) => {
+            for (const line of lines) {
+              if (line.name && line.name.toUpperCase().includes("EXPENSE") && typeof line.amount === 'number' && line.amount > 0) {
+                 totalExpenses = line.amount;
+              }
+              if (line.children) findExpenses(line.children);
+            }
+          };
+          findExpenses(plData);
 
-          setDynamicStats(baseMap);
+          const finalKpis = finalMap.map((stat: any) => {
+            if (stat.label === "Total Expenses") {
+              return { ...stat, value: "$" + totalExpenses.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) };
+            }
+            return stat;
+          });
+
+          setDynamicStats(finalKpis);
+
+          // Calculate Monthly Insights
+          const formatInsight = (num: number) => 
+            "$" + num.toLocaleString("en-US", { maximumFractionDigits: 0 });
+            
+          const rawAP = kpiData.find(k => k.label === "Account Payable")?.value?.replace(/[$,]/g, "") || "0";
+          const apVal = parseFloat(rawAP);
+          
+          const rawBank = kpiData.find(k => k.label === "Cash & Bank Balance")?.value?.replace(/[$,]/g, "") || "0";
+          const bankVal = parseFloat(rawBank);
+
+          const margin = totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue * 100) : 0;
+          
+          setMonthlyInsights([
+            { label: "Operating Margin", value: margin.toFixed(1) + "%", color: "#8bc53d", desc: margin > 20 ? "Healthy profit range" : "Monitor expenses" },
+            { label: "Account Payable", value: formatInsight(apVal), color: "#F68C1F", desc: "Current liabilities" },
+            { label: "Cash on Hand", value: formatInsight(bankVal), color: "#00648F", desc: "Liquid bank balance" },
+          ]);
         }
       } catch (err) {
         console.error("Failed to load dashboard data:", err);
@@ -140,9 +165,11 @@ export default function DashboardPage() {
             return (
               <div
                 key={i}
-                className={`bg-bg-card rounded-xl border border-border p-6 transition-all duration-300 hover:shadow-md ${isLoading ? "opacity-0" : "opacity-100"}`}
+                className={cn(
+                  "card-base card-p",
+                  isLoading ? "opacity-0" : "opacity-100"
+                )}
                 style={{
-                  boxShadow: "var(--shadow-card)",
                   transitionDelay: `${i * 100}ms`,
                 }}
               >
@@ -175,21 +202,20 @@ export default function DashboardPage() {
         <div className="grid grid-cols-12 gap-4">
           {/* Revenue vs Expenses Chart */}
           <div
-            className="col-span-12 lg:col-span-8 bg-bg-card rounded-xl border border-border p-6 flex flex-col"
-            style={{ boxShadow: "var(--shadow-card)" }}
+            className="col-span-12 lg:col-span-8 card-base card-p flex flex-col"
           >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-[18px] font-semibold text-text-primary">Financial Trends</h3>
               <div className="flex items-center gap-2">
-                <button className="px-3 py-1.5 text-[13px] font-medium rounded-md bg-bg-page border border-border text-text-secondary hover:border-border transition-all">Export PDF</button>
-                <button className="px-3 py-1.5 text-[13px] font-medium rounded-md bg-primary text-white hover:bg-primary-dark transition-all">Full View</button>
+                <button className="btn-secondary h-auto py-1.5 text-[13px]">Export PDF</button>
+                <button className="btn-primary h-auto py-1.5 text-[13px]">Full View</button>
               </div>
             </div>
 
             <div className="h-[300px] w-full mt-auto">
               {isClient && !isLoading ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <BarChart data={chartDataState} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border-light)" />
                     <XAxis
                       dataKey="name"
@@ -235,8 +261,7 @@ export default function DashboardPage() {
 
           {/* Performance Summary / Insights */}
           <div
-            className="col-span-12 lg:col-span-4 bg-bg-card rounded-xl border border-border p-6 flex flex-col"
-            style={{ boxShadow: "var(--shadow-card)" }}
+            className="col-span-12 lg:col-span-4 card-base card-p flex flex-col"
           >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-[18px] font-semibold text-text-primary">Monthly Insight</h3>
@@ -244,11 +269,11 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex-1 space-y-3">
-              {[
-                { label: "Operating Margin", value: "33.1%", color: "#8bc53d", desc: "Healthy profit range" },
-                { label: "Account Payable", value: "$4,230", color: "#F68C1F", desc: "Due within 14 days" },
-                { label: "Projected Cash", value: "$182K", color: "#00648F", desc: "Estimated end of Q2" },
-              ].map((item, i) => (
+              {(monthlyInsights.length > 0 ? monthlyInsights : [
+                { label: "Operating Margin", value: "0%", color: "#8bc53d", desc: "Calculating..." },
+                { label: "Account Payable", value: "$0", color: "#F68C1F", desc: "Loading..." },
+                { label: "Cash on Hand", value: "$0", color: "#00648F", desc: "Loading..." },
+              ]).map((item, i) => (
                 <div key={i} className="p-4 rounded-lg bg-bg-page/50 hover:bg-bg-page transition-all">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[12px] font-medium text-text-muted">{item.label}</span>
@@ -260,15 +285,14 @@ export default function DashboardPage() {
               ))}
             </div>
 
-            <button className="w-full mt-5 py-2.5 bg-bg-page hover:bg-border-light border border-border text-[13px] font-medium text-text-primary rounded-md transition-all">
+            <button className="btn-secondary w-full mt-5 py-2.5">
               Comprehensive Audit Info
             </button>
           </div>
 
           {/* Recent Invoices - Full Width Table */}
           <div
-            className="col-span-12 bg-bg-card p-6 rounded-xl border border-border"
-            style={{ boxShadow: "var(--shadow-card)" }}
+            className="col-span-12 card-base card-p"
           >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-[18px] font-semibold text-text-primary">Recent Invoices</h3>
@@ -281,12 +305,14 @@ export default function DashboardPage() {
                   <input
                     type="text"
                     placeholder="Search invoices..."
-                    className="w-full pl-10 pr-4 h-10 bg-bg-card border border-border rounded-md text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="input-base pl-10 h-10"
                   />
                 </div>
 
                 <Link href="/invoices">
-                  <button className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 h-10 rounded-md text-[14px] font-semibold transition-all active:scale-[0.98]">
+                  <button className="btn-primary">
                     View All
                     <ChevronDown size={16} />
                   </button>
@@ -298,11 +324,11 @@ export default function DashboardPage() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-border bg-bg-page/50">
-                    <th className="py-3 px-4 text-[14px] font-medium text-text-muted">ID</th>
-                    <th className="py-3 px-4 text-[14px] font-medium text-text-muted">Client Name</th>
-                    <th className="py-3 px-4 text-[14px] font-medium text-text-muted">Reference</th>
-                    <th className="py-3 px-4 text-[14px] font-medium text-text-muted text-right">Amount</th>
+                    <th className="py-3 px-6 text-[14px] font-medium text-text-muted">Invoice & Date</th>
+                    <th className="py-3 px-4 text-[14px] font-medium text-text-muted">Client</th>
                     <th className="py-3 px-4 text-[14px] font-medium text-text-muted">Due Date</th>
+                    <th className="py-3 px-4 text-[14px] font-medium text-text-muted text-right">Amount</th>
+                    <th className="py-3 px-4 text-[14px] font-medium text-text-muted text-right">Balance</th>
                     <th className="py-3 px-4 text-[14px] font-medium text-text-muted text-center w-[100px]">Status</th>
                   </tr>
                 </thead>
@@ -312,44 +338,68 @@ export default function DashboardPage() {
                       <tr key={i}><td colSpan={6} className="py-4 px-4"><div className="skeleton h-8 w-full rounded-md" /></td></tr>
                     ))
                   ) : (
-                    invoicesData.slice(0, 5).map((inv: any, i: number) => {
-                      const amount = inv.TotalAmt || inv.amount || 0;
-                      const balance = inv.Balance || inv.balance || 0;
-                      let status = inv.status || "open";
-                      if (inv.TotalAmt !== undefined) {
-                        status = balance > 0 ? "open" : "paid";
-                      }
-                      
-                      return (
-                      <tr key={i} className="group hover:bg-bg-page/50 transition-colors">
-                        <td className="py-3 px-4 text-[14px] font-medium text-text-primary">
-                          {inv.DocNumber || inv.id || `INV-00${i+1}`}
-                        </td>
-                        <td className="py-3 px-4 text-[14px] text-text-secondary">
-                          {inv.CustomerRef?.name || inv.customer || "Unknown Client"}
-                        </td>
-                        <td className="py-3 px-4 text-[14px] text-text-muted">
-                          Standard Billing
-                        </td>
-                        <td className="py-3 px-4 text-right text-[14px] font-semibold text-text-primary tabular-nums">
-                          ${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-4 text-[14px] text-text-secondary">
-                          {inv.DueDate || inv.dueDate || inv.date || "N/A"}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className={cn(
-                            "inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[12px] font-medium capitalize min-w-[70px]",
-                            status === "paid" ? "bg-[#8bc53d] text-white" : "",
-                            status === "open" ? "bg-[#00648F] text-white" : "",
-                            status === "overdue" ? "bg-[#C62026] text-white" : "",
-                            (!["paid", "open", "overdue"].includes(status)) ? "bg-[#6D6E71] text-white" : ""
-                          )}>
-                            {status}
-                          </span>
-                        </td>
-                      </tr>
-                    )})
+                    invoicesData
+                      .filter((inv: any) => {
+                        const s = searchTerm.toLowerCase();
+                        const idMatch = (inv.DocNumber || inv.id || "").toLowerCase().includes(s);
+                        const customerMatch = (inv.CustomerRef?.name || inv.customer || "").toLowerCase().includes(s);
+                        return idMatch || customerMatch;
+                      })
+                      .slice(0, 5)
+                      .map((inv: any, i: number) => {
+                        const amount = inv.TotalAmt || inv.amount || 0;
+                        const balance = inv.Balance || inv.balance || 0;
+                        
+                        // Accurate status mapping consistent with Invoices page
+                        let status = "open";
+                        if (balance === 0) status = "paid";
+                        else if (inv.DueDate && new Date(inv.DueDate) < new Date()) status = "overdue";
+                        
+                        const statusConfig = (s: string) => {
+                          const cfgs: any = {
+                            paid: { label: "Paid", icon: CheckCircle2, color: "bg-[#8bc53d] text-white" },
+                            open: { label: "Open", icon: Clock, color: "bg-[#00648F] text-white" },
+                            overdue: { label: "Overdue", icon: AlertCircle, color: "bg-[#C62026] text-white" },
+                            draft: { label: "Draft", icon: FileText, color: "bg-[#6D6E71] text-white" },
+                          };
+                          return cfgs[s.toLowerCase()] || cfgs.open;
+                        };
+                        const config = statusConfig(status);
+                        const StatusIcon = config.icon;
+                        
+                        return (
+                        <tr key={inv.id || i} className="group hover:bg-bg-page/50 transition-colors">
+                          <td className="py-3 px-6">
+                            <div className="flex flex-col">
+                              <span className="text-[14px] font-medium text-text-primary">#{inv.DocNumber || inv.id || `INV-00${i+1}`}</span>
+                              <span className="text-[12px] text-text-muted">
+                                {new Date(inv.MetaData?.CreateTime || inv.date || Date.now()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-[14px] text-text-secondary">
+                            {inv.CustomerRef?.name || inv.customer || "Unknown Client"}
+                          </td>
+                          <td className="py-3 px-4 text-[14px] text-text-secondary">
+                            {inv.DueDate || inv.dueDate || "N/A"}
+                          </td>
+                          <td className="py-3 px-4 text-right text-[14px] font-semibold text-text-primary tabular-nums">
+                            ${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-4 text-right text-[14px] font-medium text-text-primary tabular-nums">
+                            ${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <div className={cn(
+                              "inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium capitalize min-w-[70px]",
+                              config.color
+                            )}>
+                              <StatusIcon size={12} />
+                              {config.label}
+                            </div>
+                          </td>
+                        </tr>
+                      )})
                   )}
                 </tbody>
               </table>

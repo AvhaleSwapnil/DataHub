@@ -115,11 +115,11 @@ export default function ReportsPage() {
     ];
 
     return (
-        <div className="flex flex-col h-full bg-bg-page">
+        <div className="page-container">
             <Header title="Reports" />
 
-            <div className="flex-1 p-6 overflow-y-auto">
-                <h1 className="text-[24px] font-bold text-text-primary mb-6">Financial Reports</h1>
+            <div className="page-content">
+                <h1 className="page-title">Financial Reports</h1>
                 
                 {/* Tabs — matching reference segmented style */}
                 <div className="flex gap-6 mb-6 border-b border-border pb-px">
@@ -143,7 +143,7 @@ export default function ReportsPage() {
                 </div>
 
                 {/* Main Card */}
-                <div className="bg-bg-card rounded-xl border border-border p-6" style={{ boxShadow: "var(--shadow-card)" }}>
+                <div className="card-base card-p">
                     {/* Content Header */}
                     <div className="flex flex-col gap-1 mb-5">
                         <h2 className="text-[18px] font-semibold text-text-primary">{selectedTab}</h2>
@@ -269,7 +269,7 @@ export default function ReportsPage() {
                                 <button
                                     onClick={() => setViewMode("preview")}
                                     disabled={!selectedClient}
-                                    className="w-full h-10 mt-4 bg-primary text-white text-[14px] font-semibold rounded-md hover:bg-primary-dark transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="btn-primary w-full mt-4"
                                 >
                                     <FileCheck size={16} />
                                     Generate Report
@@ -286,7 +286,7 @@ export default function ReportsPage() {
                                         placeholder="Search clients..."
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
-                                        className="w-full h-10 pl-10 pr-4 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                                        className="input-base pl-10"
                                     />
                                 </div>
                                 <div className="flex-1 min-h-[300px] border border-border rounded-lg overflow-hidden flex flex-col bg-bg-card">
@@ -349,20 +349,20 @@ export default function ReportsPage() {
                             <div className="flex items-center justify-end gap-3 mt-6">
                                 <button
                                     onClick={() => setViewMode("generator")}
-                                    className="px-4 h-10 bg-bg-card border border-border rounded-md text-[14px] font-medium text-text-primary hover:bg-bg-page transition-colors"
+                                    className="btn-secondary"
                                 >
                                     Back to Generator
                                 </button>
                                 <button 
                                     onClick={() => generateCSV(getReportData())}
-                                    className="flex items-center gap-2 px-4 h-10 bg-bg-card border border-border rounded-md text-[14px] font-medium text-text-secondary hover:bg-bg-page transition-colors"
+                                    className="btn-secondary"
                                 >
                                     <FileSpreadsheet size={16} className="text-text-muted" />
                                     Export as CSV
                                 </button>
                                 <button 
                                     onClick={() => generateExcel(getReportData())}
-                                    className="flex items-center gap-2 px-4 h-10 bg-primary hover:bg-primary-dark text-white text-[14px] font-semibold rounded-md transition-all active:scale-[0.98]"
+                                    className="btn-primary shadow-md"
                                 >
                                     <Download size={16} />
                                     Download Excel

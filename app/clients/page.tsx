@@ -60,18 +60,18 @@ export default function CustomersPage() {
 
         {/* Top Header / Action Row */}
         <div className="flex items-center justify-between">
-          <h1 className="text-[24px] font-bold text-text-primary">Clients</h1>
+          <h1 className="page-title mb-0">Clients</h1>
           <div className="flex items-center gap-3">
             <button
               onClick={handleExportCSV}
-              className="h-10 px-4 bg-bg-card border border-border rounded-md text-[14px] font-medium text-text-secondary hover:bg-bg-page transition-all flex items-center gap-2"
+              className="btn-secondary"
             >
               <Download size={16} className="text-text-muted" />
               Export CSV
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="h-10 px-4 bg-primary text-white rounded-md text-[14px] font-semibold hover:bg-primary-dark transition-all flex items-center gap-2 active:scale-[0.98]"
+              className="btn-primary"
             >
               <Plus size={16} />
               Add Client
@@ -107,7 +107,7 @@ export default function CustomersPage() {
             {error}
           </div>
         ) : (
-          <div className="bg-bg-card rounded-xl border border-border overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <div className="card-base overflow-hidden">
             <div className="overflow-x-auto min-h-[500px]">
               <table className="w-full border-collapse">
                 <thead>

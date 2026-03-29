@@ -50,7 +50,7 @@ export default function AdvancedFilterToolbar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3 bg-bg-card p-4 rounded-xl border border-border transition-all" style={{ boxShadow: "var(--shadow-card)" }}>
+    <div className="flex flex-wrap items-center gap-3 card-base p-4">
       {/* Search Input */}
       <div className="relative group flex-1 min-w-[280px]">
         <Search 
@@ -62,7 +62,7 @@ export default function AdvancedFilterToolbar({
           placeholder={placeholder}
           value={searchTerm}
           onChange={handleSearch}
-          className="w-full h-10 pl-10 pr-4 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder:text-text-muted"
+          className="input-base pl-10 h-10"
         />
       </div>
 
@@ -129,7 +129,7 @@ export default function AdvancedFilterToolbar({
       {/* Reset Button */}
       <button 
         onClick={resetAll}
-        className="h-10 px-3 flex items-center gap-2 bg-bg-page hover:bg-border-light border border-border text-[14px] font-medium text-text-secondary rounded-md transition-all active:scale-[0.98]"
+        className="btn-secondary h-10 px-3"
         title="Reset all filters"
       >
         <RotateCcw size={14} />

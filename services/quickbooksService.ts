@@ -7,7 +7,7 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-async function apiFetch(endpoint: string, options: RequestInit = {}) {
+async function apiFetch(endpoint: string, options: RequestInit = {}, retries = 1) {
   const url = `${API_BASE_URL}${endpoint}`;
   try {
     const response = await fetch(url, {
@@ -17,7 +17,21 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
       },
       ...options,
     });
+    
+    // Automatic Token Refresh Logic on Unauthorized
     if (!response.ok) {
+      if ((response.status === 401 || response.status === 403) && retries > 0) {
+        console.warn(`[Auth Error] ${endpoint} returned ${response.status}. Attempting to refresh token...`);
+        try {
+          const refreshRes = await fetch(`${API_BASE_URL}/refresh-token`);
+          if (refreshRes.ok) {
+             console.log("Token refreshed successfully. Retrying original request...");
+             return await apiFetch(endpoint, options, retries - 1);
+          }
+        } catch (refreshErr) {
+          console.error("Failed to automatically refresh token:", refreshErr);
+        }
+      }
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
     return await response.json();
@@ -46,5 +60,10 @@ export const QuickbooksService = {
   async getCustomers() {
     const rawData = await apiFetch("/customers");
     return parseQBCustomers(rawData);
+  },
+
+  async refreshToken() {
+    // Manually hit the refresh token endpoint
+    return await apiFetch("/refresh-token");
   }
 };

@@ -12,11 +12,11 @@ import {
   ExternalLink,
   Shield,
   Database,
-  Settings,
   ChevronRight,
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { QuickbooksService } from "@/services/quickbooksService";
 
 interface ConnectionInfo {
   status: "connected" | "disconnected" | "expired" | "error";
@@ -86,9 +86,30 @@ export default function ConnectionsPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleSync = () => {
+  const handleSync = async () => {
     setIsSyncing(true);
-    setTimeout(() => setIsSyncing(false), 2500);
+    try {
+      await QuickbooksService.refreshToken();
+      console.log("Token successfully refreshed before syncing");
+      // We can add actual QB sync triggers here in the future
+    } catch (err) {
+      console.error("Error during sync/refresh:", err);
+    } finally {
+      setTimeout(() => setIsSyncing(false), 1500); // simulate the sync duration
+    }
+  };
+
+  const handleConnect = async () => {
+    // Also use the refresh token API as requested for the connect button
+    setIsLoading(true);
+    try {
+      await QuickbooksService.refreshToken();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setConnection(connectionData);
+      setIsLoading(false);
+    }
   };
 
   const statusConfig = {
@@ -108,7 +129,7 @@ export default function ConnectionsPage() {
         <h1 className="text-[24px] font-bold text-text-primary">Manage Connection</h1>
         
         {/* Main Status Card */}
-        <div className="bg-bg-card rounded-xl border border-border overflow-hidden" style={{ boxShadow: "var(--shadow-card)" }}>
+        <div className="card-base overflow-hidden">
           <div className={cn("px-6 py-3 flex items-center justify-between border-b-2", 
             connection?.status === "connected" ? "bg-primary-light/10 border-primary" : "bg-bg-page border-border"
           )}>
@@ -145,10 +166,10 @@ export default function ConnectionsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={handleSync} disabled={isSyncing} className="h-10 px-4 bg-primary text-white text-[14px] font-semibold rounded-md hover:bg-primary-dark transition-all disabled:opacity-50 flex items-center gap-2 active:scale-[0.98]">
+                  <button onClick={handleSync} disabled={isSyncing} className="btn-primary">
                     <RefreshCw size={16} className={isSyncing ? "animate-spin" : ""} /> {isSyncing ? "Syncing..." : "Sync Now"}
                   </button>
-                  <button onClick={() => setShowDisconnectModal(true)} className="h-10 px-4 text-[14px] font-medium text-negative border border-negative/30 rounded-md hover:bg-negative-bg transition-all">Disconnect</button>
+                  <button onClick={() => setShowDisconnectModal(true)} className="btn-negative">Disconnect</button>
                 </div>
               </div>
             ) : (
@@ -156,7 +177,7 @@ export default function ConnectionsPage() {
                 <div className="w-16 h-16 rounded-xl bg-bg-page mx-auto mb-4 flex items-center justify-center text-text-muted"><Link2Off size={32} /></div>
                 <h3 className="text-[18px] font-semibold text-text-primary mb-2">No active connection</h3>
                 <p className="text-[14px] text-text-secondary mb-6 max-w-sm mx-auto">Connect your QuickBooks account to start syncing your financial data automatically.</p>
-                <button className="h-11 px-8 bg-primary text-white text-[14px] font-semibold rounded-md shadow-md flex items-center gap-2 mx-auto hover:bg-primary-dark transition-all"><Zap size={16} fill="white" /> Connect to QuickBooks</button>
+                <button onClick={handleConnect} className="btn-primary h-11 px-8 shadow-md mx-auto"><Zap size={16} fill="white" /> Connect to QuickBooks</button>
               </div>
             )}
           </div>
@@ -166,17 +187,17 @@ export default function ConnectionsPage() {
         {connection?.status === "connected" && !isLoading && (
           <>
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-bg-card rounded-xl border border-border p-5" style={{ boxShadow: "var(--shadow-card)" }}>
+              <div className="card-base p-5">
                 <div className="flex items-center gap-2 mb-3 text-text-muted text-[12px] font-medium"><Shield size={14} className="text-accent-1" /> Access Token</div>
                 <p className="text-[24px] font-bold text-text-primary">Active</p>
                 <p className="text-[12px] text-text-muted mt-1">Refreshed automatically</p>
               </div>
-              <div className="bg-bg-card rounded-xl border border-border p-5 border-l-4 border-l-warning" style={{ boxShadow: "var(--shadow-card)" }}>
+              <div className="card-base p-5 border-l-4 border-l-warning">
                 <div className="flex items-center gap-2 mb-3 text-text-muted text-[12px] font-medium"><Clock size={14} className="text-warning" /> Token Expiry</div>
                 <p className="text-[24px] font-bold text-warning">{tokenDaysLeft} Days Left</p>
                 <p className="text-[12px] text-text-muted mt-1">Valid until {formatDate(connection.tokenExpiresAt)}</p>
               </div>
-              <div className="bg-bg-card rounded-xl border border-border p-5" style={{ boxShadow: "var(--shadow-card)" }}>
+              <div className="card-base p-5">
                 <div className="flex items-center gap-2 mb-3 text-text-muted text-[12px] font-medium"><Database size={14} className="text-accent-3" /> Records Synced</div>
                 <p className="text-[24px] font-bold text-text-primary">{connection.syncedEntities.reduce((a, b) => a + b.count, 0).toLocaleString()}</p>
                 <p className="text-[12px] text-text-muted mt-1">Total synchronized entries</p>
@@ -184,7 +205,7 @@ export default function ConnectionsPage() {
             </div>
 
             {/* Entity List */}
-            <div className="bg-bg-card rounded-xl border border-border overflow-hidden" style={{ boxShadow: "var(--shadow-card)" }}>
+            <div className="card-base overflow-hidden">
               <div className="px-6 py-4 border-b border-border">
                 <h3 className="text-[16px] font-semibold text-text-primary">Synced Entities</h3>
               </div>
@@ -212,7 +233,7 @@ export default function ConnectionsPage() {
             </div>
 
             {/* Activity Timeline */}
-            <div className="bg-bg-card rounded-xl border border-border p-6" style={{ boxShadow: "var(--shadow-card)" }}>
+            <div className="card-base p-6">
               <h3 className="text-[16px] font-semibold text-text-primary mb-6">Recent Activity</h3>
               <div className="relative pl-6 space-y-6">
                 <div className="absolute left-2.5 top-2 bottom-2 w-px bg-border" />
