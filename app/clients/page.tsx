@@ -154,22 +154,30 @@ export default function CustomersPage() {
                         <td className="py-3 px-4 text-center">
                           {(() => {
                             const config = statusConfig(customer.status);
-                            const StatusIcon = config.icon;
                             return (
                               <span className={cn(
-                                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium capitalize",
+                                "inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[12px] font-bold capitalize min-w-[80px]",
                                 config.color
                               )}>
-                                <StatusIcon size={12} />
                                 {customer.status}
                               </span>
                             );
                           })()}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <button className="p-2 text-text-muted hover:text-text-primary hover:bg-bg-page rounded-md transition-all cursor-pointer">
-                            <MoreHorizontal size={16} />
-                          </button>
+                          <div className="relative group/menu inline-block text-left">
+                            <button className="p-2 text-text-muted hover:text-text-primary hover:bg-bg-page rounded-md transition-all cursor-pointer">
+                              <MoreHorizontal size={16} />
+                            </button>
+                            <div className="absolute right-0 top-full mt-1 w-32 bg-bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10">
+                              <div className="p-1">
+                                <button className="w-full text-left px-3 py-2 text-[13px] text-text-primary hover:bg-bg-page rounded-md flex items-center gap-2">
+                                  <FileText size={14} className="text-text-muted" />
+                                  Edit
+                                </button>
+                              </div>
+                            </div>
+                          </div>
                         </td>
                       </tr>
                     ))

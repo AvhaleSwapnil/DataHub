@@ -73,12 +73,12 @@ export default function DashboardPage() {
 
         if (isMounted) {
           const custs = Array.isArray(custsData?.QueryResponse?.Customer) ? custsData.QueryResponse.Customer :
-            Array.isArray(custsData?.data?.QueryResponse?.Customer) ? custsData.data.QueryResponse.Customer : 
-            (Array.isArray(custsData) ? custsData : []);
-            
+            Array.isArray(custsData?.data?.QueryResponse?.Customer) ? custsData.data.QueryResponse.Customer :
+              (Array.isArray(custsData) ? custsData : []);
+
           const invs = Array.isArray(invsData?.QueryResponse?.Invoice) ? invsData.QueryResponse.Invoice :
-            Array.isArray(invsData?.data?.QueryResponse?.Invoice) ? invsData.data.QueryResponse.Invoice : 
-            (Array.isArray(invsData) ? invsData : []);
+            Array.isArray(invsData?.data?.QueryResponse?.Invoice) ? invsData.data.QueryResponse.Invoice :
+              (Array.isArray(invsData) ? invsData : []);
 
           setCustomersData(custs);
           setInvoicesData(invs);
@@ -94,7 +94,6 @@ export default function DashboardPage() {
             if (bal > 0 && (inv.status !== "paid")) outstandingCount++;
           });
 
-          const totalCustomers = custs.length;
 
           const finalMap = kpiData.map(stat => {
             if (stat.label === "Total Revenue") {
@@ -107,7 +106,7 @@ export default function DashboardPage() {
           const findExpenses = (lines: any[]) => {
             for (const line of lines) {
               if (line.name && line.name.toUpperCase().includes("EXPENSE") && typeof line.amount === 'number' && line.amount > 0) {
-                 totalExpenses = line.amount;
+                totalExpenses = line.amount;
               }
               if (line.children) findExpenses(line.children);
             }
@@ -124,17 +123,17 @@ export default function DashboardPage() {
           setDynamicStats(finalKpis);
 
           // Calculate Monthly Insights
-          const formatInsight = (num: number) => 
+          const formatInsight = (num: number) =>
             "$" + num.toLocaleString("en-US", { maximumFractionDigits: 0 });
-            
+
           const rawAP = kpiData.find(k => k.label === "Account Payable")?.value?.replace(/[$,]/g, "") || "0";
           const apVal = parseFloat(rawAP);
-          
+
           const rawBank = kpiData.find(k => k.label === "Cash & Bank Balance")?.value?.replace(/[$,]/g, "") || "0";
           const bankVal = parseFloat(rawBank);
 
           const margin = totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue * 100) : 0;
-          
+
           setMonthlyInsights([
             { label: "Operating Margin", value: margin.toFixed(1) + "%", color: "#8bc53d", desc: margin > 20 ? "Healthy profit range" : "Monitor expenses" },
             { label: "Account Payable", value: formatInsight(apVal), color: "#F68C1F", desc: "Current liabilities" },
@@ -217,7 +216,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-[18px] font-semibold text-text-primary">Financial Trends</h3>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={handleExportTrendsCSV}
                   className="btn-secondary h-auto py-1.5 text-[13px]"
                 >
@@ -363,12 +362,12 @@ export default function DashboardPage() {
                       .map((inv: any, i: number) => {
                         const amount = inv.TotalAmt || inv.amount || 0;
                         const balance = inv.Balance || inv.balance || 0;
-                        
+
                         // Accurate status mapping consistent with Invoices page
                         let status = "open";
                         if (balance === 0) status = "paid";
                         else if (inv.DueDate && new Date(inv.DueDate) < new Date()) status = "overdue";
-                        
+
                         const statusConfig = (s: string) => {
                           const cfgs: any = {
                             paid: { label: "Paid", icon: CheckCircle2, color: "bg-[#8bc53d] text-white" },
@@ -380,40 +379,40 @@ export default function DashboardPage() {
                         };
                         const config = statusConfig(status);
                         const StatusIcon = config.icon;
-                        
+
                         return (
-                        <tr key={inv.id || i} className="group hover:bg-bg-page/50 transition-colors">
-                          <td className="py-3 px-6">
-                            <div className="flex flex-col">
-                              <span className="text-[14px] font-medium text-text-primary">#{inv.DocNumber || inv.id || `INV-00${i+1}`}</span>
-                              <span className="text-[12px] text-text-muted">
-                                {new Date(inv.MetaData?.CreateTime || inv.date || Date.now()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-[14px] text-text-secondary">
-                            {inv.CustomerRef?.name || inv.customer || "Unknown Client"}
-                          </td>
-                          <td className="py-3 px-4 text-[14px] text-text-secondary">
-                            {inv.DueDate || inv.dueDate || "N/A"}
-                          </td>
-                          <td className="py-3 px-4 text-right text-[14px] font-semibold text-text-primary tabular-nums">
-                            ${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-3 px-4 text-right text-[14px] font-medium text-text-primary tabular-nums">
-                            ${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <div className={cn(
-                              "inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium capitalize min-w-[70px]",
-                              config.color
-                            )}>
-                              <StatusIcon size={12} />
-                              {config.label}
-                            </div>
-                          </td>
-                        </tr>
-                      )})
+                          <tr key={inv.id || i} className="group hover:bg-bg-page/50 transition-colors">
+                            <td className="py-3 px-6">
+                              <div className="flex flex-col">
+                                <span className="text-[14px] font-medium text-text-primary">#{inv.DocNumber || inv.id || `INV-00${i + 1}`}</span>
+                                <span className="text-[12px] text-text-muted">
+                                  {new Date(inv.MetaData?.CreateTime || inv.date || Date.now()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-[14px] text-text-secondary">
+                              {inv.CustomerRef?.name || inv.customer || "Unknown Client"}
+                            </td>
+                            <td className="py-3 px-4 text-[14px] text-text-secondary">
+                              {inv.DueDate || inv.dueDate || "N/A"}
+                            </td>
+                            <td className="py-3 px-4 text-right text-[14px] font-semibold text-text-primary tabular-nums">
+                              ${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-3 px-4 text-right text-[14px] font-medium text-text-primary tabular-nums">
+                              ${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <div className={cn(
+                                "inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[12px] font-bold capitalize min-w-[80px]",
+                                config.color
+                              )}>
+                                {config.label}
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })
                   )}
                 </tbody>
               </table>

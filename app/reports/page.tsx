@@ -298,8 +298,8 @@ export default function ReportsPage() {
                                         className="input-base pl-10"
                                     />
                                 </div>
-                                <div className="flex-1 min-h-[300px] border border-border rounded-lg overflow-hidden flex flex-col bg-bg-card">
-                                    <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+                                <div className="flex-1 max-h-[400px] border border-border rounded-lg overflow-hidden flex flex-col bg-bg-card">
+                                    <div className="flex-1 overflow-y-auto p-2 space-y-0.5 custom-scrollbar">
                                         {filteredClients.map((client) => (
                                             <div
                                                 key={client.id}
