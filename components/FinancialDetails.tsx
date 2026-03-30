@@ -3,7 +3,7 @@
 import { useState, Fragment } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
-import { DetailedFinancialData, AccountDetail, Transaction } from "@/data/financial-details";
+import { DetailedFinancialData, AccountDetail, Transaction } from "@/types/financial-details";
 
 interface FinancialDetailsProps {
   data: DetailedFinancialData;

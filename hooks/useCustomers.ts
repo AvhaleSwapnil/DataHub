@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { fetchCustomers } from "@/services/customerService";
 import { fetchInvoices } from "@/services/invoiceService";
-import { Customer } from "@/data/customers";
+import { Customer } from "@/types/customers";
 
 export function useCustomers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -19,8 +19,8 @@ export function useCustomers() {
 
         const apiInvs = Array.isArray(invResponse?.QueryResponse?.Invoice)
           ? invResponse.QueryResponse.Invoice
-          : Array.isArray(invResponse?.data?.QueryResponse?.Invoice) 
-            ? invResponse.data.QueryResponse.Invoice 
+          : Array.isArray(invResponse?.data?.QueryResponse?.Invoice)
+            ? invResponse.data.QueryResponse.Invoice
             : (Array.isArray(invResponse) ? invResponse : []);
 
         const apiCustomers = Array.isArray(custResponse?.QueryResponse?.Customer)
@@ -31,7 +31,7 @@ export function useCustomers() {
 
         const mappedCustomers = apiCustomers.map((c: any) => {
           const customerName = c.DisplayName || c.FullyQualifiedName || "Unknown";
-          
+
           // Check for overdue invoices for this specific customer
           const hasOverdueInvoice = apiInvs.some((inv: any) => {
             const invCustomer = inv.CustomerRef?.name || inv.customer;

@@ -1,20 +1,20 @@
-import { 
-  DollarSign, 
-  Wallet, 
-  TrendingUp, 
-  Building2, 
-  CreditCard, 
-  Scale, 
-  RefreshCw, 
-  PiggyBank, 
-  ArrowDownToLine, 
-  Package, 
-  ArrowUpFromLine, 
+import {
+  DollarSign,
+  Wallet,
+  TrendingUp,
+  Building2,
+  CreditCard,
+  Scale,
+  RefreshCw,
+  PiggyBank,
+  ArrowDownToLine,
+  Package,
+  ArrowUpFromLine,
   Landmark,
 } from "lucide-react";
 
-import { FinancialLine } from "@/data/balance-sheet";
-import { DetailedFinancialData, FinancialGroup, AccountDetail, Transaction } from "@/data/financial-details";
+import { FinancialLine } from "@/types/balance-sheet";
+import { DetailedFinancialData, FinancialGroup, AccountDetail, Transaction } from "@/types/financial-details";
 
 // --- Parsers for Summary Reports ---
 export function parseSummaryRows(rows: any[]): FinancialLine[] {
@@ -27,12 +27,12 @@ export function parseSummaryRows(rows: any[]): FinancialLine[] {
       const summaryCols = row.Summary?.ColData || [];
       const totalStr = [...summaryCols].reverse().find((c: any) => c.value && !isNaN(parseFloat(c.value?.replace(/,/g, ""))))?.value || "0";
       const totalAmount = parseFloat(totalStr?.replace(/,/g, "")) || 0;
-      
+
       const children: FinancialLine[] = [];
       if (row.Rows && row.Rows.Row) {
         children.push(...parseSummaryRows(row.Rows.Row));
       }
-      
+
       if (row.Summary && children.length > 0) {
         children.push({
           id: `total-${row.group || Math.random().toString()}`,
@@ -72,8 +72,8 @@ const extractTransactions = (rowArray: any[], reportDate: string = "N/A"): Trans
     if (r.type === "Data") {
       const c = r.ColData || [];
       const isSummary = c.length < 5;
-      const rawAmount = isSummary ? (c[c.length-1]?.value || "0") : (c[6]?.value || "0");
-      const rawBalance = isSummary ? (c[c.length-1]?.value || "0") : (c[7]?.value || "0");
+      const rawAmount = isSummary ? (c[c.length - 1]?.value || "0") : (c[6]?.value || "0");
+      const rawBalance = isSummary ? (c[c.length - 1]?.value || "0") : (c[7]?.value || "0");
 
       txs.push({
         id: Math.random().toString(),
@@ -137,7 +137,7 @@ export function parseDetailRows(rows: any[], reportDate: string = "N/A"): Detail
       const total = parseFloat(totalStr.replace(/,/g, "")) || 0;
 
       const accounts = findAccounts(row.Rows?.Row || [], reportDate);
-      
+
       if (accounts.length > 0) {
         groups.push({
           id: Math.random().toString(),
@@ -146,12 +146,12 @@ export function parseDetailRows(rows: any[], reportDate: string = "N/A"): Detail
           accounts
         });
       } else if (row.Rows?.Row) {
-         const subGroupsData = parseDetailRows(row.Rows.Row, reportDate);
-         groups.push(...subGroupsData.groups);
+        const subGroupsData = parseDetailRows(row.Rows.Row, reportDate);
+        groups.push(...subGroupsData.groups);
       }
     }
   }
-  const uniqueGroups = groups.filter((g, index, self) => 
+  const uniqueGroups = groups.filter((g, index, self) =>
     index === self.findIndex((t) => t.name === g.name && t.total === g.total)
   );
   return { groups: uniqueGroups };
@@ -170,14 +170,14 @@ export function parseProfitAndLoss(data: any): FinancialLine[] {
 
 export async function fetchDashboardKPIs() {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  
+
   // Note: Assuming backend allows CORS as per instruction
   const response = await fetch(`${baseUrl}/balance-sheet`);
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch from backend: ${response.status}`);
   }
-  
+
   const json = await response.json();
   const rows = json?.data?.Rows?.Row || [];
 
@@ -217,8 +217,8 @@ export async function fetchDashboardKPIs() {
   const rawEquity = findValGroup(rows, "Equity");
   const rawCurrentAssets = findValGroup(rows, "CurrentAssets");
   const rawCurrentLiabilities = findValGroup(rows, "CurrentLiabilities");
-  const workingCapital = (rawCurrentAssets !== null && rawCurrentLiabilities !== null) 
-    ? rawCurrentAssets - rawCurrentLiabilities 
+  const workingCapital = (rawCurrentAssets !== null && rawCurrentLiabilities !== null)
+    ? rawCurrentAssets - rawCurrentLiabilities
     : null;
 
   const rawBank = findValGroup(rows, "BankAccounts");
@@ -229,7 +229,7 @@ export async function fetchDashboardKPIs() {
   const rawNetIncome = findValGroup(rows, "NetIncome");
 
   // Format purely based on API return. Zero if missing, no mock defaults!
-  const fmt = (num: number | null) => 
+  const fmt = (num: number | null) =>
     "$" + (num || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return [
@@ -251,9 +251,9 @@ export async function fetchDashboardKPIs() {
 export async function fetchFinancialTrends() {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
   const response = await fetch(`${baseUrl}/profit-and-loss`);
-  
+
   if (!response.ok) return [];
-  
+
   const json = await response.json();
   const rows = json?.data?.Rows?.Row || [];
 

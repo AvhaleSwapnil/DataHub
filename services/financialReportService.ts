@@ -1,9 +1,9 @@
-import { 
-  parseSummaryRows, 
-  parseDetailRows 
+import {
+  parseSummaryRows,
+  parseDetailRows
 } from "./reportService";
-import { DetailedFinancialData } from "@/data/financial-details";
-import { FinancialLine } from "@/data/balance-sheet";
+import { DetailedFinancialData } from "@/types/financial-details";
+import { FinancialLine } from "@/types/balance-sheet";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -12,12 +12,12 @@ async function fetchWithAuth(endpoint: string, retries = 1): Promise<any> {
   try {
     const res = await fetch(url);
     if (!res.ok) {
-        if ((res.status === 401 || res.status === 403) && retries > 0) {
-            console.warn(`[Auth Error] ${endpoint} 401. Refreshing Token...`);
-            await fetch(`${API_BASE_URL}/refresh-token`);
-            return await fetchWithAuth(endpoint, retries - 1);
-        }
-        throw new Error(`Failed to fetch ${endpoint}: ${res.status}`);
+      if ((res.status === 401 || res.status === 403) && retries > 0) {
+        console.warn(`[Auth Error] ${endpoint} 401. Refreshing Token...`);
+        await fetch(`${API_BASE_URL}/refresh-token`);
+        return await fetchWithAuth(endpoint, retries - 1);
+      }
+      throw new Error(`Failed to fetch ${endpoint}: ${res.status}`);
     }
     return await res.json();
   } catch (err) {

@@ -10,9 +10,9 @@ import {
   Calendar,
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
-import { FinancialLine } from "@/data/balance-sheet";
+import { FinancialLine } from "@/types/balance-sheet";
 import FinancialDetails from "./FinancialDetails";
-import { DetailedFinancialData } from "@/data/financial-details";
+import { DetailedFinancialData } from "@/types/financial-details";
 
 interface FinancialReportProps {
   data: FinancialLine[];
@@ -95,8 +95,8 @@ const ReportRow = ({ line, depth = 0 }: { line: FinancialLine; depth: number }) 
   );
 };
 
-export default function FinancialReport({ 
-  data, detailedData, title, subtitle, hideToolbar, 
+export default function FinancialReport({
+  data, detailedData, title, subtitle, hideToolbar,
   initialViewMode = "summary",
   initialPeriod = "This Month",
   initialMethod = "Accrual",

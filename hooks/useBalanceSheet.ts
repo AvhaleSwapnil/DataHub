@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { FinancialLine, balanceSheetData } from "@/data/balance-sheet";
-import { DetailedFinancialData, balanceSheetDetailData } from "@/data/financial-details";
+import { FinancialLine, balanceSheetData } from "@/types/balance-sheet";
+import { DetailedFinancialData, balanceSheetDetailData } from "@/types/financial-details";
 
 export function useBalanceSheet() {
   const [isLoading, setIsLoading] = useState(true);

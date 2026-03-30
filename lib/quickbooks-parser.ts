@@ -1,7 +1,7 @@
-import { FinancialLine } from "@/data/balance-sheet";
-import { DetailedFinancialData, AccountDetail, Transaction } from "@/data/financial-details";
-import { Invoice } from "@/data/invoices";
-import { Customer } from "@/data/customers";
+import { FinancialLine } from "@/types/balance-sheet";
+import { DetailedFinancialData, AccountDetail, Transaction } from "@/types/financial-details";
+import { Invoice } from "@/types/invoices";
+import { Customer } from "@/types/customers";
 
 export function parseQBBalanceSheet(qbData: any): FinancialLine[] {
   const root = qbData.data ? qbData.data : qbData;
@@ -12,7 +12,7 @@ export function parseQBBalanceSheet(qbData: any): FinancialLine[] {
       const name = row.Header?.ColData?.[0]?.value || "";
       const totalCol = row.Summary?.ColData?.[row.Summary.ColData.length - 1]?.value;
       const amount = totalCol ? parseFloat(totalCol) : 0;
-      
+
       const children: FinancialLine[] = [];
       if (row.Rows && row.Rows.Row) {
         for (const subRow of row.Rows.Row) {
@@ -22,16 +22,16 @@ export function parseQBBalanceSheet(qbData: any): FinancialLine[] {
           }
         }
       }
-      
+
       const totalName = row.Summary?.ColData?.[0]?.value || `Total ${name}`;
       if (children.length > 0 && totalName) {
-         children.push({
-           id: `total-${level}-${name.replace(/\\s+/g, '-')}`,
-           name: totalName,
-           amount: amount,
-           level: level,
-           type: "total"
-         });
+        children.push({
+          id: `total-${level}-${name.replace(/\\s+/g, '-')}`,
+          name: totalName,
+          amount: amount,
+          level: level,
+          type: "total"
+        });
       }
 
       return {
@@ -64,69 +64,69 @@ export function parseQBBalanceSheet(qbData: any): FinancialLine[] {
 export function parseQBBalanceSheetDetails(qbData: any): DetailedFinancialData {
   const root = qbData.data ? qbData.data : qbData;
   if (!root || !root.Rows || !root.Rows.Row) return { groups: [], grandTotal: 0 };
-  
+
   const groups: { id: string; name: string; accounts: AccountDetail[]; total: number }[] = [];
-  
+
   // Recursively find Data rows to treat as accounts to simulate detail transactions
   const findAccounts = (rows: any[], currentAccountList: AccountDetail[]) => {
-     for(const r of rows) {
-        if(r.type === "Data") {
-            const name = r.ColData?.[0]?.value || "Unknown Account";
-            const id = r.ColData?.[0]?.id || `acc-${name.replace(/\\s+/g, '-')}`;
-            const amountStr = r.ColData?.[r.ColData.length - 1]?.value;
-            const amount = amountStr ? parseFloat(amountStr) : 0;
-            
-            // If the row lacks transaction details, provide a default summary transaction
-            currentAccountList.push({
-               id,
-               name,
-               total: amount,
-               transactions: [
-                  { 
-                    id: `t-${id}`, 
-                    date: root.Header?.EndPeriod || new Date().toISOString().split('T')[0], 
-                    type: "Balance", 
-                    num: "", 
-                    name: "", 
-                    memo: "Ending Balance", 
-                    split: "", 
-                    amount: amount, 
-                    balance: amount 
-                  }
-               ]
-            });
-        } else if (r.type === "Section" && r.Rows?.Row) {
-            findAccounts(r.Rows.Row, currentAccountList);
-        }
-     }
+    for (const r of rows) {
+      if (r.type === "Data") {
+        const name = r.ColData?.[0]?.value || "Unknown Account";
+        const id = r.ColData?.[0]?.id || `acc-${name.replace(/\\s+/g, '-')}`;
+        const amountStr = r.ColData?.[r.ColData.length - 1]?.value;
+        const amount = amountStr ? parseFloat(amountStr) : 0;
+
+        // If the row lacks transaction details, provide a default summary transaction
+        currentAccountList.push({
+          id,
+          name,
+          total: amount,
+          transactions: [
+            {
+              id: `t-${id}`,
+              date: root.Header?.EndPeriod || new Date().toISOString().split('T')[0],
+              type: "Balance",
+              num: "",
+              name: "",
+              memo: "Ending Balance",
+              split: "",
+              amount: amount,
+              balance: amount
+            }
+          ]
+        });
+      } else if (r.type === "Section" && r.Rows?.Row) {
+        findAccounts(r.Rows.Row, currentAccountList);
+      }
+    }
   };
 
   let grandTotal = 0;
 
   for (const mainRow of root.Rows.Row) {
-     if (mainRow.type === "Section") {
-        const groupName = mainRow.Header?.ColData?.[0]?.value || "";
-        const amountStr = mainRow.Summary?.ColData?.[mainRow.Summary.ColData.length - 1]?.value;
-        const total = amountStr ? parseFloat(amountStr) : 0;
-        
-        const accounts: AccountDetail[] = [];
-        if (mainRow.Rows?.Row) {
-           findAccounts(mainRow.Rows.Row, accounts);
-        }
-        
-        groups.push({
-           id: groupName.replace(/\\s+/g, '-').toLowerCase(),
-           name: groupName,
-           total,
-           accounts
-        });
-        
-        if (groupName.toUpperCase().includes("ASSETS")) {
-            grandTotal = total;
-        } else if (groupName.toUpperCase().includes("LIABILITIES AND EQUITY") && grandTotal === 0) {
-            grandTotal = total;
-        }
-     }
+    if (mainRow.type === "Section") {
+      const groupName = mainRow.Header?.ColData?.[0]?.value || "";
+      const amountStr = mainRow.Summary?.ColData?.[mainRow.Summary.ColData.length - 1]?.value;
+      const total = amountStr ? parseFloat(amountStr) : 0;
+
+      const accounts: AccountDetail[] = [];
+      if (mainRow.Rows?.Row) {
+        findAccounts(mainRow.Rows.Row, accounts);
+      }
+
+      groups.push({
+        id: groupName.replace(/\\s+/g, '-').toLowerCase(),
+        name: groupName,
+        total,
+        accounts
+      });
+
+      if (groupName.toUpperCase().includes("ASSETS")) {
+        grandTotal = total;
+      } else if (groupName.toUpperCase().includes("LIABILITIES AND EQUITY") && grandTotal === 0) {
+        grandTotal = total;
+      }
+    }
   }
 
   return { groups, grandTotal };
@@ -134,12 +134,12 @@ export function parseQBBalanceSheetDetails(qbData: any): DetailedFinancialData {
 
 export function parseQBInvoices(qbData: any): Invoice[] {
   const invoices = qbData?.QueryResponse?.Invoice || qbData?.data?.QueryResponse?.Invoice || qbData?.Invoice || [];
-  
+
   return invoices.map((inv: any) => {
     const balance = inv.Balance || 0;
     const amount = inv.TotalAmt || 0;
     const dueDate = inv.DueDate || inv.TxnDate || "";
-    
+
     let status: "paid" | "open" | "overdue" | "draft" = "open";
     if (balance <= 0) {
       status = "paid";
@@ -149,12 +149,12 @@ export function parseQBInvoices(qbData: any): Invoice[] {
       // Reset times to compare only dates
       due.setHours(0, 0, 0, 0);
       today.setHours(0, 0, 0, 0);
-      
+
       if (due < today) {
         status = "overdue";
       }
     }
-    
+
     return {
       id: inv.Id,
       invoiceNumber: inv.DocNumber || `INV-${inv.Id}`,
@@ -170,7 +170,7 @@ export function parseQBInvoices(qbData: any): Invoice[] {
 
 export function parseQBCustomers(qbData: any): Customer[] {
   const customers = qbData?.QueryResponse?.Customer || qbData?.data?.QueryResponse?.Customer || qbData?.Customer || [];
-  
+
   return customers.map((c: any) => {
     // Determine status. QuickBooks uses Active (boolean). 
     // We can guess "overdue" if balance is very high or just stick to active/inactive.
