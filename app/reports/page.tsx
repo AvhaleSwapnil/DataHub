@@ -7,11 +7,11 @@ import { Search, ChevronDown, FileCheck, FileSpreadsheet, Download } from "lucid
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 import { useCustomers } from "@/hooks/useCustomers";
-import { 
-  getBalanceSheet, 
-  getBalanceSheetDetail, 
-  getProfitAndLoss, 
-  getProfitAndLossDetail 
+import {
+    getBalanceSheet,
+    getBalanceSheetDetail,
+    getProfitAndLoss,
+    getProfitAndLossDetail
 } from "@/services/financialReportService";
 
 
@@ -64,7 +64,7 @@ export default function ReportsPage() {
     const getReportData = () => {
         const isSummary = reportType === "Summary";
         if (selectedTab === "Balance Sheet") {
-            return isSummary 
+            return isSummary
                 ? [{ Category: "Assets", Amount: 500000 }, { Category: "Liabilities", Amount: 200000 }, { Category: "Equity", Amount: 300000 }]
                 : [{ ID: "A1", Category: "Current Assets", Item: "Cash", Amount: 150000 }, { ID: "A2", Category: "Fixed Assets", Item: "Property", Amount: 350000 }, { ID: "L1", Category: "Current Liabilities", Item: "Accounts Payable", Amount: 200000 }];
         } else {
@@ -79,11 +79,11 @@ export default function ReportsPage() {
         const headers = Object.keys(data[0]).join(",");
         const rows = data.map(obj => Object.values(obj).join(",")).join("\n");
         const csvContent = `${headers}\n${rows}`;
-        
+
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
         const fileName = `${selectedTab.toLowerCase().replace(" ", "-")}-${reportType.toLowerCase()}.csv`;
-        
+
         link.href = URL.createObjectURL(blob);
         link.setAttribute("download", fileName);
         document.body.appendChild(link);
@@ -96,11 +96,11 @@ export default function ReportsPage() {
         const headers = Object.keys(data[0]).join("\t");
         const rows = data.map(obj => Object.values(obj).join("\t")).join("\n");
         const excelContent = `${headers}\n${rows}`;
-        
+
         const blob = new Blob([excelContent], { type: "application/vnd.ms-excel;charset=utf-8;" });
         const link = document.createElement("a");
         const fileName = `${selectedTab.toLowerCase().replace(" ", "-")}-${reportType.toLowerCase()}.xls`;
-        
+
         link.href = URL.createObjectURL(blob);
         link.setAttribute("download", fileName);
         document.body.appendChild(link);
@@ -120,7 +120,7 @@ export default function ReportsPage() {
 
             <div className="page-content">
                 <h1 className="page-title">Financial Reports</h1>
-                
+
                 {/* Tabs — matching reference segmented style */}
                 <div className="flex gap-6 mb-6 border-b border-border pb-px">
                     {(["Balance Sheet", "Profit & Loss"] as const).map((tab) => (
@@ -175,172 +175,126 @@ export default function ReportsPage() {
                     </div>
 
                     {viewMode === "generator" ? (
-                        /* Generator Form Grid */
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div className="space-y-5">
-                                {/* Report Type */}
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-[14px] font-medium text-text-primary">Report Type</label>
-                                    <div className="relative">
-                                        <select 
-                                            value={reportType}
-                                            onChange={(e) => setReportType(e.target.value as any)}
-                                            className="w-full h-10 pl-3 pr-10 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all cursor-pointer"
-                                        >
-                                            <option value="Summary">Summary</option>
-                                            <option value="Detail">Detailed</option>
-                                        </select>
-                                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                                    </div>
-                                </div>
-
-                                {/* Date Range */}
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-[14px] font-medium text-text-primary">Date Range</label>
-                                    <div className="flex flex-col gap-3">
+                        /* Generator Form - Centered 2-Column Layout */
+                        <div className="max-w-2xl mx-auto space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                                {/* Left Column */}
+                                <div className="space-y-5">
+                                    {/* Report Type */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-[14px] font-medium text-text-primary">Report Type</label>
                                         <div className="relative">
-                                            <select 
-                                                value={dateRange}
-                                                onChange={(e) => {
-                                                  const val = e.target.value;
-                                                  setDateRange(val);
-                                                  if (val === "This Year") {
-                                                    const currentYear = new Date().getFullYear();
-                                                    const today = new Date().toISOString().split("T")[0];
-                                                    setCustomRange({ start: `${currentYear}-01-01`, end: today });
-                                                  }
-                                                }}
+                                            <select
+                                                value={reportType}
+                                                onChange={(e) => setReportType(e.target.value as any)}
                                                 className="w-full h-10 pl-3 pr-10 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all cursor-pointer"
                                             >
-                                                <option>Today</option>
-                                                <option>This Month</option>
-                                                <option>This Quarter</option>
-                                                <option>This Year</option>
-                                                <option>Custom Range</option>
+                                                <option value="Summary">Summary</option>
+                                                <option value="Detail">Detailed</option>
                                             </select>
                                             <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
                                         </div>
+                                    </div>
 
-                                        {dateRange === "Custom Range" && (
-                                            <div className="flex items-end gap-3">
-                                                <div className="flex-1 flex flex-col gap-1.5">
-                                                    <span className="text-[12px] text-text-muted">From</span>
-                                                    <input 
-                                                        type="date" 
-                                                        value={customRange.start}
-                                                        onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })}
-                                                        className="h-10 px-3 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary" 
-                                                    />
-                                                </div>
-                                                <div className="flex-1 flex flex-col gap-1.5">
-                                                    <span className="text-[12px] text-text-muted">To</span>
-                                                    <input 
-                                                        type="date" 
-                                                        value={customRange.end}
-                                                        onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })}
-                                                        className="h-10 px-3 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary" 
-                                                    />
-                                                </div>
+                                    {/* Date Range */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-[14px] font-medium text-text-primary">Date Range</label>
+                                        <div className="flex flex-col gap-3">
+                                            <div className="relative">
+                                                <select
+                                                    value={dateRange}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        setDateRange(val);
+                                                        if (val === "This Year") {
+                                                            const currentYear = new Date().getFullYear();
+                                                            const today = new Date().toISOString().split("T")[0];
+                                                            setCustomRange({ start: `${currentYear}-01-01`, end: today });
+                                                        }
+                                                    }}
+                                                    className="w-full h-10 pl-3 pr-10 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all cursor-pointer"
+                                                >
+                                                    <option>Today</option>
+                                                    <option>This Month</option>
+                                                    <option>This Quarter</option>
+                                                    <option>This Year</option>
+                                                    <option>Custom Range</option>
+                                                </select>
+                                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
                                             </div>
-                                        )}
-                                    </div>
-                                </div>
 
-                                {/* Accounting Method */}
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-[14px] font-medium text-text-primary">Accounting Method</label>
-                                    <div className="relative">
-                                        <select 
-                                            value={accountingMethod}
-                                            onChange={(e) => setAccountingMethod(e.target.value)}
-                                            className="w-full h-10 pl-3 pr-10 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all cursor-pointer"
-                                        >
-                                            <option>Cash</option>
-                                            <option>Accrual</option>
-                                        </select>
-                                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                                    </div>
-                                </div>
-
-                                {/* Report Format */}
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-[14px] font-medium text-text-primary">Report Format</label>
-                                    <div className="relative">
-                                        <select className="w-full h-10 pl-3 pr-10 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all cursor-pointer">
-                                            <option>PDF</option>
-                                            <option>Excel (CSV)</option>
-                                        </select>
-                                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                                    </div>
-                                </div>
-
-                                {/* Generate Button */}
-                                <button
-                                    onClick={() => setViewMode("preview")}
-                                    disabled={!selectedClient}
-                                    className="btn-primary w-full mt-4"
-                                >
-                                    <FileCheck size={16} />
-                                    Generate Report
-                                </button>
-                            </div>
-
-                            {/* Client Selector */}
-                            <div className="flex flex-col h-full">
-                                <label className="text-[14px] font-medium text-text-primary mb-2">Select Client</label>
-                                <div className="relative mb-3">
-                                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search clients..."
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                        className="input-base pl-10"
-                                    />
-                                </div>
-                                <div className="flex-1 max-h-[400px] border border-border rounded-lg overflow-hidden flex flex-col bg-bg-card">
-                                    <div className="flex-1 overflow-y-auto p-2 space-y-0.5 custom-scrollbar">
-                                        {filteredClients.map((client) => (
-                                            <div
-                                                key={client.id}
-                                                onClick={() => toggleClient(client.id)}
-                                                className={cn(
-                                                    "flex items-center justify-between px-3 py-3 rounded-md transition-all cursor-pointer",
-                                                    selectedClient === client.id 
-                                                        ? "bg-bg-sidebar-active border border-primary/20" 
-                                                        : "bg-bg-card hover:bg-bg-page border border-transparent"
-                                                )}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className={cn(
-                                                        "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all",
-                                                        selectedClient === client.id 
-                                                            ? "border-primary bg-primary" 
-                                                            : "border-border-input"
-                                                    )}>
-                                                        {selectedClient === client.id && (
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                                                        )}
+                                            {dateRange === "Custom Range" && (
+                                                <div className="flex items-end gap-3 translate-y-1">
+                                                    <div className="flex-1 flex flex-col gap-1.5">
+                                                        <span className="text-[12px] text-text-muted">From</span>
+                                                        <input
+                                                            type="date"
+                                                            value={customRange.start}
+                                                            onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })}
+                                                            className="h-10 px-3 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                                                        />
                                                     </div>
-                                                    <span className={cn(
-                                                        "text-[14px] transition-colors",
-                                                        selectedClient === client.id ? "font-medium text-text-primary" : "text-text-secondary"
-                                                    )}>
-                                                        {client.name}
-                                                    </span>
+                                                    <div className="flex-1 flex flex-col gap-1.5">
+                                                        <span className="text-[12px] text-text-muted">To</span>
+                                                        <input
+                                                            type="date"
+                                                            value={customRange.end}
+                                                            onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })}
+                                                            className="h-10 px-3 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <span className="text-[12px] text-text-muted tabular-nums">{client.id}</span>
-                                            </div>
-                                        ))}
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column */}
+                                <div className="space-y-5">
+                                    {/* Accounting Method */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-[14px] font-medium text-text-primary">Accounting Method</label>
+                                        <div className="relative">
+                                            <select
+                                                value={accountingMethod}
+                                                onChange={(e) => setAccountingMethod(e.target.value)}
+                                                className="w-full h-10 pl-3 pr-10 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all cursor-pointer"
+                                            >
+                                                <option>Cash</option>
+                                                <option>Accrual</option>
+                                            </select>
+                                            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                                        </div>
+                                    </div>
+
+                                    {/* Report Format */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-[14px] font-medium text-text-primary">Report Format</label>
+                                        <div className="relative">
+                                            <select className="w-full h-10 pl-3 pr-10 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all cursor-pointer">
+                                                <option>PDF</option>
+                                                <option>Excel (CSV)</option>
+                                            </select>
+                                            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Full-width Generate Button */}
+                            <button
+                                onClick={() => setViewMode("preview")}
+                                className="btn-primary w-full mt-4"
+                            >
+                                <FileCheck size={16} />
+                                Generate Report
+                            </button>
                         </div>
                     ) : (
                         /* Preview Mode */
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className="h-[700px] flex flex-col">
-                                <FinancialReport 
+                                <FinancialReport
                                     key={`${selectedTab}-${reportType}-${selectedClient}-${dateRange}-${accountingMethod}`}
                                     data={selectedTab === "Balance Sheet" ? balanceSheetData : profitLossData}
                                     detailedData={selectedTab === "Balance Sheet" ? balanceSheetDetailData : profitLossDetailData}
@@ -353,7 +307,7 @@ export default function ReportsPage() {
                                     initialCustomRange={customRange}
                                 />
                             </div>
-                            
+
                             {/* Actions bar */}
                             <div className="flex items-center justify-end gap-3 mt-6">
                                 <button
@@ -362,14 +316,14 @@ export default function ReportsPage() {
                                 >
                                     Back to Generator
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => generateCSV(getReportData())}
                                     className="btn-secondary"
                                 >
                                     <FileSpreadsheet size={16} className="text-text-muted" />
                                     Export as CSV
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => generateExcel(getReportData())}
                                     className="btn-primary shadow-md"
                                 >

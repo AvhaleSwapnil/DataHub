@@ -11,6 +11,9 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { useCustomers } from "@/hooks/useCustomers";
 import { filterCustomers } from "@/lib/filters";
 import { exportToCSV } from "@/lib/exportCSV";
+import GenericEditModal from "@/components/GenericEditModal";
+import { updateCustomer } from "@/services/customerService";
+import { Mail, Phone, MapPin, UserSquare2, ShieldCheck, FileCheck } from "lucide-react";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -21,6 +24,15 @@ export default function CustomersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
+
+  const handleUpdateCustomer = async (formData: any) => {
+    if (!editingCustomer) return;
+    await updateCustomer(editingCustomer.id, formData);
+    // Update local state for smooth UX
+    setCustomers(customers.map((c: any) => c.id === editingCustomer.id ? { ...c, ...formData } : c));
+  };
 
   const filteredCustomers = filterCustomers(customers, {
     searchTerm,
@@ -171,7 +183,13 @@ export default function CustomersPage() {
                             </button>
                             <div className="absolute right-0 top-full mt-1 w-32 bg-bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10">
                               <div className="p-1">
-                                <button className="w-full text-left px-3 py-2 text-[13px] text-text-primary hover:bg-bg-page rounded-md flex items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingCustomer(customer);
+                                    setIsEditModalOpen(true);
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-[13px] text-text-primary hover:bg-bg-page rounded-md flex items-center gap-2"
+                                >
                                   <FileText size={14} className="text-text-muted" />
                                   Edit
                                 </button>
@@ -215,6 +233,27 @@ export default function CustomersPage() {
           </div>
         )}
       </div>
+
+      <GenericEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleUpdateCustomer}
+        initialData={editingCustomer}
+        title="Edit Client"
+        fields={[
+          { name: "name", label: "Full Name", type: "text", icon: UserSquare2 },
+          { name: "email", label: "Email Address", type: "email", icon: Mail },
+          { name: "phone", label: "Phone Number", type: "tel", icon: Phone },
+          { name: "balance", label: "Balance Due", type: "text", icon: ShieldCheck },
+          {
+            name: "status", label: "Current Status", type: "select", icon: FileCheck, options: [
+              { label: "Active", value: "active" },
+              { label: "Inactive", value: "inactive" },
+              { label: "Overdue", value: "overdue" },
+            ]
+          }
+        ]}
+      />
 
       <AddCustomerModal
         isOpen={isModalOpen}

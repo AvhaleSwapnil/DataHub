@@ -13,17 +13,17 @@ export function useInvoices() {
         const response = await fetchInvoices();
         const apiInvs = Array.isArray(response?.QueryResponse?.Invoice)
           ? response.QueryResponse.Invoice
-          : Array.isArray(response?.data?.QueryResponse?.Invoice) 
-            ? response.data.QueryResponse.Invoice 
+          : Array.isArray(response?.data?.QueryResponse?.Invoice)
+            ? response.data.QueryResponse.Invoice
             : (Array.isArray(response) ? response : []);
-          
+
         const mappedInvs = apiInvs.map((inv: any) => {
           const amount = inv.TotalAmt || inv.amount || 0;
           const balance = inv.Balance || inv.balance || 0;
           let status = "open";
           if (balance === 0) status = "paid";
           else if (new Date(inv.DueDate) < new Date()) status = "overdue";
-          
+
           return {
             id: inv.DocNumber || inv.id || "Unknown",
             invoiceNumber: inv.DocNumber || inv.id || "Unknown",
@@ -35,7 +35,7 @@ export function useInvoices() {
             dueDate: inv.DueDate || inv.dueDate || "N/A"
           };
         });
-        
+
         if (isMounted) {
           setInvoices(mappedInvs);
           setIsLoading(false);
@@ -50,9 +50,9 @@ export function useInvoices() {
       }
     }
     loadInvoices();
-    
+
     return () => { isMounted = false; };
   }, []);
 
-  return { invoices, isLoading, error };
+  return { invoices, setInvoices, isLoading, error };
 }

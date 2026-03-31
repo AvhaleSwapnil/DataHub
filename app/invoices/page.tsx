@@ -4,18 +4,31 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import { SkeletonTable } from "@/components/SkeletonLoader";
 import { useCustomers } from "@/hooks/useCustomers";
-import { Plus, MoreHorizontal, Download, FileText, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  MoreHorizontal,
+  Download,
+  FileText,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Calendar,
+  DollarSign,
+  Activity
+} from "lucide-react";
 import Pagination from "@/components/Pagination";
 import AdvancedFilterToolbar from "@/components/AdvancedFilterToolbar";
 import { formatCurrency, cn } from "@/lib/utils";
 import { useInvoices } from "@/hooks/useInvoices";
 import { filterInvoices } from "@/lib/filters";
 import { exportToCSV } from "@/lib/exportCSV";
+import GenericEditModal from "@/components/GenericEditModal";
+import { updateInvoice } from "@/services/invoiceService";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function InvoicesPage() {
-  const { invoices, isLoading, error } = useInvoices();
+  const { invoices, setInvoices, isLoading, error } = useInvoices();
   const { customers } = useCustomers();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,6 +38,16 @@ export default function InvoicesPage() {
   const [endDate, setEndDate] = useState("");
   const [customerFilter, setCustomerFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<any>(null);
+
+  const handleUpdateInvoice = async (formData: any) => {
+    if (!editingInvoice) return;
+    await updateInvoice(editingInvoice.id, formData);
+    // Update local state for smooth UX
+    setInvoices((prev: any) => prev.map((inv: any) => inv.id === editingInvoice.id ? { ...inv, ...formData } : inv));
+  };
 
   const filteredInvoices = filterInvoices(invoices, {
     searchTerm,
@@ -218,7 +241,13 @@ export default function InvoicesPage() {
                               </button>
                               <div className="absolute right-0 top-full mt-1 w-32 bg-bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10">
                                 <div className="p-1">
-                                  <button className="w-full text-left px-3 py-2 text-[13px] text-text-primary hover:bg-bg-page rounded-md flex items-center gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setEditingInvoice(invoice);
+                                      setIsEditModalOpen(true);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-[13px] text-text-primary hover:bg-bg-page rounded-md flex items-center gap-2"
+                                  >
                                     <FileText size={14} className="text-text-muted" />
                                     Edit
                                   </button>
@@ -254,6 +283,26 @@ export default function InvoicesPage() {
           </div>
         )}
       </div>
+      <GenericEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleUpdateInvoice}
+        initialData={editingInvoice}
+        title="Edit Invoice"
+        fields={[
+          { name: "invoiceNumber", label: "Invoice Number", type: "text", icon: FileText },
+          { name: "customer", label: "Client", type: "text", icon: Calendar },
+          { name: "amount", label: "Total Amount", type: "text", icon: DollarSign },
+          { name: "balance", label: "Balance Due", type: "text", icon: Activity },
+          {
+            name: "status", label: "Status", type: "select", options: [
+              { label: "Paid", value: "paid" },
+              { label: "Open", value: "open" },
+              { label: "Overdue", value: "overdue" },
+            ]
+          }
+        ]}
+      />
     </>
   );
 }

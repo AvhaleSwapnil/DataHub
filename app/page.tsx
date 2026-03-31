@@ -199,7 +199,7 @@ export default function DashboardPage() {
                   </p>
 
                   <p className="text-[12px] text-text-muted mt-1">
-                    {stat.change} from last month
+                    {stat.desc}
                   </p>
                 </div>
               </div>

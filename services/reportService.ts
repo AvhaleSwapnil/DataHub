@@ -233,18 +233,18 @@ export async function fetchDashboardKPIs() {
     "$" + (num || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return [
-    { label: "Total Revenue", value: fmt(0), change: "+0.0%", trend: "neutral" as const, icon: DollarSign, color: "#8bc53d" },
-    { label: "Total Expenses", value: fmt(0), change: "-0.0%", trend: "neutral" as const, icon: Wallet, color: "#C62026" },
-    { label: "Net Profit", value: fmt(rawNetIncome), change: "+0.0%", trend: "neutral" as const, icon: TrendingUp, color: "#00648F" },
-    { label: "Total Assets", value: fmt(rawAssets), change: "+0.0%", trend: "neutral" as const, icon: Building2, color: "#8bc53d" },
-    { label: "Total Liabilities", value: fmt(rawLiabilities), change: "-0.0%", trend: "neutral" as const, icon: CreditCard, color: "#F68C1F" },
-    { label: "Total Equity", value: fmt(rawEquity), change: "+0.0%", trend: "neutral" as const, icon: Scale, color: "#00648F" },
-    { label: "Working Capital", value: fmt(workingCapital), change: "+0.0%", trend: "neutral" as const, icon: RefreshCw, color: "#8bc53d" },
-    { label: "Cash & Bank Balance", value: fmt(rawBank), change: "+0.0%", trend: "neutral" as const, icon: PiggyBank, color: "#8bc53d" },
-    { label: "Account Receivable", value: fmt(rawAR), change: "+0.0%", trend: "neutral" as const, icon: ArrowDownToLine, color: "#00B0F0" },
-    { label: "Inventory Value", value: fmt(rawInventory), change: "stable", trend: "neutral" as const, icon: Package, color: "#6D6E71" },
-    { label: "Account Payable", value: fmt(rawAP), change: "-0.0%", trend: "neutral" as const, icon: ArrowUpFromLine, color: "#C62026" },
-    { label: "Long-Term Debt", value: fmt(rawLongTerm), change: "-0.0%", trend: "neutral" as const, icon: Landmark, color: "#C62026" },
+    { label: "Total Revenue", value: fmt(0), desc: "Total gross income", icon: DollarSign, color: "#8bc53d" },
+    { label: "Total Expenses", value: fmt(0), desc: "Total operating costs", icon: Wallet, color: "#C62026" },
+    { label: "Net Profit", value: fmt(rawNetIncome), desc: "Bottom-line earnings", icon: TrendingUp, color: "#00648F" },
+    { label: "Total Assets", value: fmt(rawAssets), desc: "Company's total valuation", icon: Building2, color: "#8bc53d" },
+    { label: "Total Liabilities", value: fmt(rawLiabilities), desc: "Current total obligations", icon: CreditCard, color: "#F68C1F" },
+    { label: "Total Equity", value: fmt(rawEquity), desc: "Net asset value", icon: Scale, color: "#00648F" },
+    { label: "Working Capital", value: fmt(workingCapital), desc: "Available operating liquidity", icon: RefreshCw, color: "#8bc53d" },
+    { label: "Cash & Bank Balance", value: fmt(rawBank), desc: "Liquid funds available", icon: PiggyBank, color: "#8bc53d" },
+    { label: "Account Receivable", value: fmt(rawAR), desc: "Unpaid client invoices", icon: ArrowDownToLine, color: "#00B0F0" },
+    { label: "Inventory Value", value: fmt(rawInventory), desc: "Current stock valuation", icon: Package, color: "#6D6E71" },
+    { label: "Account Payable", value: fmt(rawAP), desc: "Outstanding vendor bills", icon: ArrowUpFromLine, color: "#C62026" },
+    { label: "Long-Term Debt", value: fmt(rawLongTerm), desc: "Non-current liabilities", icon: Landmark, color: "#C62026" },
   ];
 }
 
