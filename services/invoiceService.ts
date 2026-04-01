@@ -1,12 +1,18 @@
 export async function fetchInvoices() {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  const response = await fetch(`${baseUrl}/invoices`);
+  try {
+    const response = await fetch(`${baseUrl}/invoices`);
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch invoices: ${response.status}`);
+    if (!response.ok) {
+      console.warn(`[API Error] Failed to fetch invoices: ${response.status}`);
+      return { QueryResponse: { Invoice: [] } };
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.warn(`[Network Error] Failed to fetch invoices:`, error);
+    return { QueryResponse: { Invoice: [] } };
   }
-
-  return await response.json();
 }
 export async function updateInvoice(id: string, data: any) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
@@ -21,4 +27,19 @@ export async function updateInvoice(id: string, data: any) {
   if (!res.ok) throw new Error("Failed to update invoice");
 
   return res.json();
+}
+
+export async function getInvoiceByDocNumber(docNumber: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  try {
+    const res = await fetch(`${baseUrl}/invoices/doc/${docNumber}`);
+    if (!res.ok) {
+      if (res.status === 404) return null;
+      throw new Error(`Failed to fetch invoice ${docNumber}`);
+    }
+    return await res.json();
+  } catch (error) {
+    console.error(`[API Error] getInvoiceByDocNumber:`, error);
+    return null;
+  }
 }

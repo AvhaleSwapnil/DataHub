@@ -7,6 +7,7 @@ export interface Invoice {
   amount: number;
   balance: number;
   status: "paid" | "open" | "overdue" | "draft";
+  privateNote?: string;
 }
 
 export const invoicesData: Invoice[] = [];

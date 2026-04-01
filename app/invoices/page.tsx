@@ -14,7 +14,12 @@ import {
   AlertCircle,
   Calendar,
   DollarSign,
-  Activity
+  Activity,
+  User,
+  Eye,
+  Mail,
+  Globe,
+  UploadCloud
 } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import AdvancedFilterToolbar from "@/components/AdvancedFilterToolbar";
@@ -23,7 +28,8 @@ import { useInvoices } from "@/hooks/useInvoices";
 import { filterInvoices } from "@/lib/filters";
 import { exportToCSV } from "@/lib/exportCSV";
 import GenericEditModal from "@/components/GenericEditModal";
-import { updateInvoice } from "@/services/invoiceService";
+import { updateInvoice, getInvoiceByDocNumber } from "@/services/invoiceService";
+import { getConnectionStatus } from "@/services/authService";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -41,9 +47,49 @@ export default function InvoicesPage() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<any>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+
+  const isComplexUpdate = (original: any, data: any) => {
+    // Check if any restricted fields are modified
+    return (
+      data.amount !== original.amount ||
+      data.balance !== original.balance ||
+      data.customerId !== original.customerId ||
+      data.status !== original.status
+    );
+  };
+
+  const openQuickBooksInvoice = (invoiceId: string) => {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_QB_ENV === "production"
+        ? "https://qbo.intuit.com/app/invoice"
+        : "https://sandbox.qbo.intuit.com/app/invoice";
+    const url = `${baseUrl}?txnId=${invoiceId}`;
+    window.open(url, "_blank");
+  };
 
   const handleUpdateInvoice = async (formData: any) => {
     if (!editingInvoice) return;
+
+    try {
+      const status = await getConnectionStatus();
+      if (!status.isConnected) {
+        alert("Please connect to QuickBooks");
+        throw new Error("Please connect to QuickBooks");
+      }
+    } catch (e) {
+      alert("Please connect to QuickBooks");
+      throw new Error("Please connect to QuickBooks");
+    }
+
+    if (isComplexUpdate(editingInvoice, formData)) {
+      alert("Redirecting to QuickBooks for advanced editing");
+      openQuickBooksInvoice(editingInvoice.id || editingInvoice.invoiceNumber);
+      setIsEditModalOpen(false);
+      return; // Do NOT call API
+    }
+
+    // simple update
     await updateInvoice(editingInvoice.id, formData);
     // Update local state for smooth UX
     setInvoices((prev: any) => prev.map((inv: any) => inv.id === editingInvoice.id ? { ...inv, ...formData } : inv));
@@ -77,7 +123,7 @@ export default function InvoicesPage() {
       filteredInvoices,
       ["Invoice Number", "Client", "Date", "Due Date", "Status", "Total Amount", "Balance Due"],
       "invoices_export",
-      (inv) => [inv.invoiceNumber, inv.customer, inv.date, inv.dueDate, inv.status, inv.amount, inv.balance]
+      (inv: any) => [inv.invoiceNumber, inv.customer, inv.date, inv.dueDate, inv.status, inv.amount, inv.balance]
     );
   };
 
@@ -184,7 +230,7 @@ export default function InvoicesPage() {
                     <th className="text-right text-[14px] font-medium text-text-muted py-3 px-4">Amount</th>
                     <th className="text-right text-[14px] font-medium text-text-muted py-3 px-4">Balance</th>
                     <th className="text-center text-[14px] font-medium text-text-muted py-3 px-4">Status</th>
-                    <th className="w-12" />
+                    <th className="text-right text-[14px] font-medium text-text-muted py-3 px-4 w-32">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -234,26 +280,35 @@ export default function InvoicesPage() {
                               {status.label}
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-center">
-                            <div className="relative group/menu inline-block text-left">
-                              <button className="p-2 text-text-muted hover:text-text-primary hover:bg-bg-page rounded-md transition-all cursor-pointer">
-                                <MoreHorizontal size={16} />
+                           <td className="py-3 px-4 text-right">
+                              <button 
+                                onClick={async () => {
+                                  setIsDetailLoading(true);
+                                  const res = await getInvoiceByDocNumber(invoice.invoiceNumber);
+                                  const detail = res?.data || res;
+                                  const matchingCustomer = customers.find((c: any) => c.name === invoice.customer);
+                                  
+                                  setEditingInvoice({
+                                    ...invoice,
+                                    ...detail,
+                                    docNumber: detail?.DocNumber || invoice.invoiceNumber,
+                                    privateNote: detail?.PrivateNote || invoice.privateNote || "",
+                                    customerId: (invoice as any).customerId || detail?.CustomerRef?.value || (matchingCustomer as any)?.id || (matchingCustomer as any)?.Id || "",
+                                    email: detail?.BillEmail?.Address || "N/A",
+                                    terms: detail?.SalesTermRef?.name || "N/A",
+                                    currency: detail?.CurrencyRef?.name || "USD",
+                                    txnDate: detail?.TxnDate || invoice.date,
+                                    totalAmt: detail?.TotalAmt || invoice.amount,
+                                  });
+                                  setIsDetailLoading(false);
+                                  setIsEditModalOpen(true);
+                                }}
+                                disabled={isDetailLoading}
+                                className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-border rounded-lg text-[12px] font-semibold text-text-primary hover:bg-bg-page hover:border-primary/30 transition-all shadow-sm bg-white ml-auto disabled:opacity-50"
+                              >
+                                <Eye size={14} className="text-text-muted" />
+                                <span>Doc</span>
                               </button>
-                              <div className="absolute right-0 top-full mt-1 w-32 bg-bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10">
-                                <div className="p-1">
-                                  <button
-                                    onClick={() => {
-                                      setEditingInvoice(invoice);
-                                      setIsEditModalOpen(true);
-                                    }}
-                                    className="w-full text-left px-3 py-2 text-[13px] text-text-primary hover:bg-bg-page rounded-md flex items-center gap-2"
-                                  >
-                                    <FileText size={14} className="text-text-muted" />
-                                    Edit
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
                           </td>
                         </tr>
                       );
@@ -288,17 +343,32 @@ export default function InvoicesPage() {
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleUpdateInvoice}
         initialData={editingInvoice}
-        title="Edit Invoice"
+        title="View Invoice"
+        mode="view"
+        variant="drawer"
         fields={[
-          { name: "invoiceNumber", label: "Invoice Number", type: "text", icon: FileText },
-          { name: "customer", label: "Client", type: "text", icon: Calendar },
-          { name: "amount", label: "Total Amount", type: "text", icon: DollarSign },
+          { name: "docNumber", label: "Invoice Number", type: "text", icon: FileText },
+          { name: "txnDate", label: "Invoice Date", type: "text", icon: Calendar },
+          { name: "dueDate", label: "Due Date", type: "text", placeholder: "YYYY-MM-DD", icon: Calendar },
+          { name: "email", label: "Billing Email", type: "text", icon: Mail },
+          { name: "terms", label: "Sales Terms", type: "text", icon: Clock },
+          { name: "currency", label: "Currency", type: "text", icon: Globe },
+          { name: "privateNote", label: "Note (Private)", type: "textarea", icon: FileText },
+          { 
+            name: "customerId", 
+            label: "Client", 
+            type: "select", 
+            icon: User, 
+            options: customers.map((c: any) => ({ label: c.name, value: c.id || c.Id }))
+          },
+          { name: "totalAmt", label: "Total Amount", type: "text", icon: DollarSign },
           { name: "balance", label: "Balance Due", type: "text", icon: Activity },
           {
             name: "status", label: "Status", type: "select", options: [
               { label: "Paid", value: "paid" },
               { label: "Open", value: "open" },
               { label: "Overdue", value: "overdue" },
+              { label: "Draft", value: "draft" }
             ]
           }
         ]}

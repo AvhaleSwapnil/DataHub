@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import FinancialReport from "@/components/FinancialReport";
-import { Search, ChevronDown, FileCheck, FileSpreadsheet, Download } from "lucide-react";
+import { Search, ChevronDown, FileCheck, FileSpreadsheet, Download, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -13,6 +13,8 @@ import {
     getProfitAndLoss,
     getProfitAndLossDetail
 } from "@/services/financialReportService";
+import * as XLSX from "xlsx";
+import { flattenAllReports } from "@/lib/report-utils";
 
 
 export default function ReportsPage() {
@@ -30,7 +32,9 @@ export default function ReportsPage() {
     const [balanceSheetDetailData, setBalanceSheetDetailData] = useState<any>({ groups: [] });
     const [profitLossDetailData, setProfitLossDetailData] = useState<any>({ groups: [] });
     const [isLoading, setIsLoading] = useState(true);
-
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+    const [reportFormat, setReportFormat] = useState<"PDF" | "Excel">("PDF");
     const { customers } = useCustomers();
 
     useEffect(() => {
@@ -91,28 +95,136 @@ export default function ReportsPage() {
         document.body.removeChild(link);
     };
 
-    const generateExcel = (data: any[]) => {
-        if (!data.length) return;
-        const headers = Object.keys(data[0]).join("\t");
-        const rows = data.map(obj => Object.values(obj).join("\t")).join("\n");
-        const excelContent = `${headers}\n${rows}`;
+    const generateExcel = async () => {
+        setIsDownloading(true);
+        
+        try {
+            // 1. Reverted to previous endpoint selection (Tab-based only)
+            const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+            const endpoint = selectedTab === "Profit & Loss" 
+                ? `${base}/profit-and-loss-statement`
+                : `${base}/all-reports`;
 
-        const blob = new Blob([excelContent], { type: "application/vnd.ms-excel;charset=utf-8;" });
-        const link = document.createElement("a");
-        const fileName = `${selectedTab.toLowerCase().replace(" ", "-")}-${reportType.toLowerCase()}.xls`;
+            const response = await fetch(endpoint);
+            if (!response.ok) throw new Error(`Failed to fetch reports from ${endpoint}`);
+            
+            const fullData = await response.json();
 
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", fileName);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            // 2. Transform reports. Prioritize active tab context and reportType (Summary/Detail)
+            const reportKeyHint = `${selectedTab} ${reportType}`.toLowerCase();
+            const workbookData = flattenAllReports(fullData, reportKeyHint);
+            const sheetNames = Object.keys(workbookData);
+
+            if (sheetNames.length === 0) {
+                alert("No valid report data found in the API response. Please ensure localhost:3000 is providing the correct QuickBooks report structure.");
+                setIsDownloading(false);
+                return;
+            }
+
+            // 3. Create workbook and append each report as its own sheet
+            const workbook = XLSX.utils.book_new();
+            
+            sheetNames.forEach(name => {
+                const sheetData = workbookData[name];
+                const worksheet = XLSX.utils.json_to_sheet(sheetData);
+                
+                // Truncate name to max 31 characters (Excel compatibility)
+                const safeName = name.slice(0, 31);
+                XLSX.utils.book_append_sheet(workbook, worksheet, safeName);
+            });
+
+            // 4. Trigger auto download
+            // Dynamic naming: e.g. balance-sheet-detail.xlsx
+            const baseName = selectedTab.toLowerCase().replace(/[^a-z0-9]/g, "-");
+            const detailSuffix = reportType.toLowerCase();
+            const fileName = `${baseName}-${detailSuffix}.xlsx`;
+
+            XLSX.writeFile(workbook, fileName);
+
+        } catch (error) {
+            console.error("Excel generation failed:", error);
+            alert("Error: Could not generate complete report. Please check if the local server at localhost:3000 is running.");
+        } finally {
+            setIsDownloading(false);
+        }
     };
 
-    const mockReportData = [
-        { id: "-F102", practice: "Cole Family Group LLC", contact: "Charles", status: "active" },
-        { id: "-F103", practice: "Roach Chiropractic Clinic", contact: "Sarah", status: "active" },
-        { id: "-F104", practice: "In-Line Family Chiro", contact: "John", status: "inactive" },
-    ];
+    const handleDownloadPDF = async () => {
+        setIsDownloadingPDF(true);
+        
+        try {
+            // 1. Reverted to previous endpoint selection (Tab-based only)
+            const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+            const endpoint = selectedTab === "Profit & Loss" 
+                ? `${base}/profit-and-loss-statement`
+                : `${base}/all-reports`;
+
+            const response = await fetch(endpoint);
+            if (!response.ok) throw new Error(`Failed to fetch reports from ${endpoint}`);
+            
+            const fullData = await response.json();
+
+            // 2. Same transformation logic as Excel
+            const reportKeyHint = `${selectedTab} ${reportType}`.toLowerCase();
+            const workbookData = flattenAllReports(fullData, reportKeyHint);
+            const sheetNames = Object.keys(workbookData);
+
+            if (sheetNames.length === 0) {
+                alert("No valid report data found for PDF generation.");
+                setIsDownloadingPDF(false);
+                return;
+            }
+
+            // 3. Generate PDF using jsPDF and autoTable
+            const { default: jsPDF } = await import("jspdf");
+            const { default: autoTable } = await import("jspdf-autotable");
+            
+            const doc = new jsPDF("p", "pt", "a4");
+            
+            sheetNames.forEach((name, index) => {
+                if (index > 0) doc.addPage();
+                
+                // Add header title for this report
+                doc.setFontSize(16);
+                doc.setTextColor(40);
+                doc.text(name, 40, 45);
+                
+                const sheetData = workbookData[name];
+                if (sheetData.length === 0) return;
+                
+                // Get headers from dataset
+                const headers = Object.keys(sheetData[0]);
+                const body = sheetData.map(row => headers.map(header => row[header] || ""));
+                
+                autoTable(doc, {
+                    head: [headers],
+                    body: body,
+                    startY: 60,
+                    margin: { left: 40, right: 40 },
+                    theme: "grid",
+                    styles: { fontSize: 7, cellPadding: 3, overflow: "linebreak" },
+                    headStyles: { fillColor: [43, 67, 101], textColor: 255, halign: "center" },
+                    columnStyles: {
+                        [headers.indexOf("Amount")]: { halign: "right" },
+                        [headers.indexOf("Total")]: { halign: "right" }
+                    },
+                    alternateRowStyles: { fillColor: [245, 247, 250] },
+                });
+            });
+
+            // 4. Dynamic naming: e.g. balance-sheet-detail.pdf
+            const baseName = selectedTab.toLowerCase().replace(/[^a-z0-9]/g, "-");
+            const fileName = `${baseName}-${reportType.toLowerCase()}.pdf`;
+            
+            doc.save(fileName);
+
+        } catch (error) {
+            console.error("PDF generation failed:", error);
+            alert("Error: Could not generate dynamic PDF report.");
+        } finally {
+            setIsDownloadingPDF(false);
+        }
+    };
 
     return (
         <div className="page-container">
@@ -271,9 +383,13 @@ export default function ReportsPage() {
                                     <div className="flex flex-col gap-1.5">
                                         <label className="text-[14px] font-medium text-text-primary">Report Format</label>
                                         <div className="relative">
-                                            <select className="w-full h-10 pl-3 pr-10 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all cursor-pointer">
-                                                <option>PDF</option>
-                                                <option>Excel (CSV)</option>
+                                            <select 
+                                                value={reportFormat === "Excel" ? "Excel (CSV)" : "PDF"}
+                                                onChange={(e) => setReportFormat(e.target.value.includes("Excel") ? "Excel" : "PDF")}
+                                                className="w-full h-10 pl-3 pr-10 bg-bg-card border border-border-input rounded-md text-[14px] text-text-primary appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all cursor-pointer"
+                                            >
+                                                <option value="PDF">PDF</option>
+                                                <option value="Excel (CSV)">Excel (CSV)</option>
                                             </select>
                                             <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
                                         </div>
@@ -316,20 +432,50 @@ export default function ReportsPage() {
                                 >
                                     Back to Generator
                                 </button>
-                                <button
-                                    onClick={() => generateCSV(getReportData())}
-                                    className="btn-secondary"
-                                >
-                                    <FileSpreadsheet size={16} className="text-text-muted" />
-                                    Export as CSV
-                                </button>
-                                <button
-                                    onClick={() => generateExcel(getReportData())}
-                                    className="btn-primary shadow-md"
-                                >
-                                    <Download size={16} />
-                                    Download Excel
-                                </button>
+                                
+                                {reportFormat === "Excel" ? (
+                                    <button
+                                        onClick={() => generateExcel()}
+                                        disabled={isDownloading}
+                                        className={cn(
+                                            "btn-primary shadow-md min-w-[160px]",
+                                            isDownloading && "opacity-80 cursor-wait"
+                                        )}
+                                    >
+                                        {isDownloading ? (
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                <span>Processing...</span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <Download size={16} />
+                                                Download Excel
+                                            </>
+                                        )}
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleDownloadPDF}
+                                        disabled={isDownloadingPDF}
+                                        className={cn(
+                                            "btn-primary shadow-md min-w-[160px]",
+                                            isDownloadingPDF && "opacity-80 cursor-wait"
+                                        )}
+                                    >
+                                        {isDownloadingPDF ? (
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                <span>Processing...</span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <FileText size={16} />
+                                                Download PDF
+                                            </>
+                                        )}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     )}

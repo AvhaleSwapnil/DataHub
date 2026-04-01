@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import { SkeletonTable } from "@/components/SkeletonLoader";
-import { Plus, MoreHorizontal, Download, CheckCircle2, AlertCircle, FileText } from "lucide-react";
+import { Plus, MoreHorizontal, Download, CheckCircle2, AlertCircle, FileText, UploadCloud, Eye, FileEdit } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import AdvancedFilterToolbar from "@/components/AdvancedFilterToolbar";
 import AddCustomerModal from "@/components/AddCustomerModal";
@@ -12,7 +12,7 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { filterCustomers } from "@/lib/filters";
 import { exportToCSV } from "@/lib/exportCSV";
 import GenericEditModal from "@/components/GenericEditModal";
-import { updateCustomer } from "@/services/customerService";
+import { updateCustomer, createCustomer } from "@/services/customerService";
 import { Mail, Phone, MapPin, UserSquare2, ShieldCheck, FileCheck } from "lucide-react";
 
 const ITEMS_PER_PAGE = 8;
@@ -43,9 +43,16 @@ export default function CustomersPage() {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedCustomers = filteredCustomers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  const handleAddCustomer = (newCustomer: any) => {
-    console.log("add customer");
-
+  const handleAddCustomer = async (newCustomer: any) => {
+    try {
+      await createCustomer(newCustomer);
+      // Wait 1.5s for QuickBooks indexing to complete
+      setTimeout(() => {
+        window.location.reload(); 
+      }, 1500);
+    } catch (err: any) {
+      alert(err.message || "Failed to add client");
+    }
   };
 
   const handleExportCSV = () => {
@@ -94,7 +101,7 @@ export default function CustomersPage() {
 
         {/* Filter Toolbar Component */}
         <AdvancedFilterToolbar
-          placeholder="Search client name, email, or ID..."
+          placeholder="Search client"
           onSearch={setSearchTerm}
           onFilterChange={(key, val) => {
             if (key === "status") setStatusFilter(val);
@@ -131,7 +138,7 @@ export default function CustomersPage() {
                     <th className="text-right text-[14px] font-medium text-text-muted py-3 px-4">Balance</th>
                     <th className="text-right text-[14px] font-medium text-text-muted py-3 px-4">Last Updated</th>
                     <th className="text-center text-[14px] font-medium text-text-muted py-3 px-4">Status</th>
-                    <th className="w-12" />
+                    <th className="text-right text-[14px] font-medium text-text-muted py-3 px-4 w-32">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -176,26 +183,17 @@ export default function CustomersPage() {
                             );
                           })()}
                         </td>
-                        <td className="py-3 px-4 text-center">
-                          <div className="relative group/menu inline-block text-left">
-                            <button className="p-2 text-text-muted hover:text-text-primary hover:bg-bg-page rounded-md transition-all cursor-pointer">
-                              <MoreHorizontal size={16} />
-                            </button>
-                            <div className="absolute right-0 top-full mt-1 w-32 bg-bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10">
-                              <div className="p-1">
-                                <button
-                                  onClick={() => {
-                                    setEditingCustomer(customer);
-                                    setIsEditModalOpen(true);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-[13px] text-text-primary hover:bg-bg-page rounded-md flex items-center gap-2"
-                                >
-                                  <FileText size={14} className="text-text-muted" />
-                                  Edit
-                                </button>
-                              </div>
-                            </div>
-                          </div>
+                        <td className="py-3 px-4 text-right">
+                          <button 
+                            onClick={() => {
+                              setEditingCustomer(customer);
+                              setIsEditModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-border rounded-lg text-[12px] font-semibold text-text-primary hover:bg-bg-page hover:border-primary/30 transition-all shadow-sm bg-white ml-auto"
+                          >
+                            <FileEdit size={14} className="text-text-muted" />
+                            <span>Edit</span>
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -240,11 +238,13 @@ export default function CustomersPage() {
         onSave={handleUpdateCustomer}
         initialData={editingCustomer}
         title="Edit Client"
+        mode="edit"
+        variant="drawer"
         fields={[
           { name: "name", label: "Full Name", type: "text", icon: UserSquare2 },
           { name: "email", label: "Email Address", type: "email", icon: Mail },
           { name: "phone", label: "Phone Number", type: "tel", icon: Phone },
-          { name: "balance", label: "Balance Due", type: "text", icon: ShieldCheck },
+          { name: "balance", label: "Balance Due", type: "text", icon: ShieldCheck, disabled: true },
           {
             name: "status", label: "Current Status", type: "select", icon: FileCheck, options: [
               { label: "Active", value: "active" },

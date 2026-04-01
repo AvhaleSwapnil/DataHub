@@ -277,7 +277,7 @@ export async function fetchFinancialTrends() {
 
   // For now, distribute totals across last 6 months to keep chart alive
   // In a real scenario, we'd fetch monthly P&L items
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+  const months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
   return months.map((m, i) => ({
     name: m,
     revenue: (totalIncome / 6) * (0.8 + Math.random() * 0.4),

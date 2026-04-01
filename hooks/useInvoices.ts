@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { fetchInvoices } from "@/services/invoiceService";
+import { Invoice } from "@/types/invoices";
 
 export function useInvoices() {
-  const [invoices, setInvoices] = useState<[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +33,8 @@ export function useInvoices() {
             balance,
             date: inv.TxnDate || inv.date || new Date().toISOString().split("T")[0],
             status,
-            dueDate: inv.DueDate || inv.dueDate || "N/A"
+            dueDate: inv.DueDate || inv.dueDate || "N/A",
+            privateNote: inv.PrivateNote || ""
           };
         });
 

@@ -43,22 +43,20 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="fixed left-0 top-0 bottom-0 w-[240px] bg-bg-sidebar border-r border-border flex flex-col z-30"
+      className="fixed left-0 top-0 bottom-0 w-[210px] bg-bg-sidebar border-r border-border flex flex-col z-30"
       style={{ boxShadow: "var(--shadow-sidebar)" }}
     >
       {/* Brand */}
-      <div className="px-5 py-5 border-b border-border">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-            <BarChart size={20} className="text-white" strokeWidth={2.5} />
+      <div className="px-3 pt-3 pb-5 border-b border-border">
+        <Link href="/" className="flex items-center justify-center">
+          <div className="flex items-center justify-center">
+            <img 
+              src="/assets/accounthub.png" 
+              alt="AccountHub Logo" 
+              className="h-9 w-auto object-contain"
+            />
           </div>
-          <div>
-            <h1 className="text-[16px] font-bold text-text-primary tracking-tight leading-tight">
-              DATA<span className="text-primary">HUB</span>
-            </h1>
-            <p className="text-[11px] text-text-muted leading-none mt-0.5">Sage Healthy RCM</p>
-          </div>
-        </div>
+        </Link>
       </div>
 
       {/* Navigation */}
@@ -73,7 +71,7 @@ export default function Sidebar() {
               href={item.href}
               className={`
                 flex items-center gap-3 px-3 py-2.5 rounded-md text-[14px] font-medium
-                transition-all duration-200 group relative
+                transition-all duration-200 relative
                 ${isActive
                   ? "bg-bg-sidebar-active text-primary font-semibold"
                   : "text-text-secondary hover:bg-bg-sidebar-hover hover:text-text-primary"
@@ -88,7 +86,7 @@ export default function Sidebar() {
                 strokeWidth={isActive ? 2.5 : 2}
                 className={`transition-colors duration-200 ${isActive
                   ? "text-primary"
-                  : "text-text-muted group-hover:text-text-secondary"
+                  : "text-text-muted hover:text-text-secondary"
                   }`}
               />
               {item.label}
@@ -102,7 +100,7 @@ export default function Sidebar() {
         {/* User Profile */}
         <div 
           onClick={() => setShowProfileMenu(!showProfileMenu)}
-          className="flex items-center gap-3 px-3 py-2.5 mb-1 rounded-md hover:bg-bg-sidebar-hover cursor-pointer transition-colors duration-200 group"
+          className="flex items-center gap-3 px-3 py-2.5 mb-1 rounded-md hover:bg-bg-sidebar-hover cursor-pointer transition-colors duration-200"
         >
           <div className="w-8 h-8 shrink-0 rounded-full bg-primary flex items-center justify-center text-white text-[12px] font-semibold">
             SA
