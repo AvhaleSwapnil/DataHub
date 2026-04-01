@@ -15,10 +15,10 @@ import {
 } from "@/services/financialReportService";
 import * as XLSX from "xlsx";
 import { flattenAllReports } from "@/lib/report-utils";
-
+import CashflowReport from "@/components/reports/CashflowReport";
 
 export default function ReportsPage() {
-    const [selectedTab, setSelectedTab] = useState<"Balance Sheet" | "Profit & Loss">("Balance Sheet");
+    const [selectedTab, setSelectedTab] = useState<"Balance Sheet" | "Profit & Loss" | "Cashflow">("Balance Sheet");
     const [viewMode, setViewMode] = useState<"generator" | "preview">("generator");
     const [reportType, setReportType] = useState<"Summary" | "Detail">("Summary");
     const [dateRange, setDateRange] = useState("This Month");
@@ -31,6 +31,7 @@ export default function ReportsPage() {
     const [profitLossData, setProfitLossData] = useState<any[]>([]);
     const [balanceSheetDetailData, setBalanceSheetDetailData] = useState<any>({ groups: [] });
     const [profitLossDetailData, setProfitLossDetailData] = useState<any>({ groups: [] });
+
     const [isLoading, setIsLoading] = useState(true);
     const [isDownloading, setIsDownloading] = useState(false);
     const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
@@ -64,19 +65,19 @@ export default function ReportsPage() {
         c.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    // Mock Datasets for Export
-    const getReportData = () => {
-        const isSummary = reportType === "Summary";
-        if (selectedTab === "Balance Sheet") {
-            return isSummary
-                ? [{ Category: "Assets", Amount: 500000 }, { Category: "Liabilities", Amount: 200000 }, { Category: "Equity", Amount: 300000 }]
-                : [{ ID: "A1", Category: "Current Assets", Item: "Cash", Amount: 150000 }, { ID: "A2", Category: "Fixed Assets", Item: "Property", Amount: 350000 }, { ID: "L1", Category: "Current Liabilities", Item: "Accounts Payable", Amount: 200000 }];
-        } else {
-            return isSummary
-                ? [{ Category: "Revenue", Amount: 1200000 }, { Category: "Expenses", Amount: 800000 }, { Category: "Net Income", Amount: 400000 }]
-                : [{ ID: "R1", Category: "Service Revenue", Item: "Consulting", Amount: 1000000 }, { ID: "E1", Category: "Operating Expenses", Item: "Rent", Amount: 500000 }, { ID: "E2", Category: "Taxes", Item: "Income Tax", Amount: 300000 }];
-        }
-    };
+    // // Mock Datasets for Export
+    // const getReportData = () => {
+    //     const isSummary = reportType === "Summary";
+    //     if (selectedTab === "Balance Sheet") {
+    //         return isSummary
+    //             ? [{ Category: "Assets", Amount: 500000 }, { Category: "Liabilities", Amount: 200000 }, { Category: "Equity", Amount: 300000 }]
+    //             : [{ ID: "A1", Category: "Current Assets", Item: "Cash", Amount: 150000 }, { ID: "A2", Category: "Fixed Assets", Item: "Property", Amount: 350000 }, { ID: "L1", Category: "Current Liabilities", Item: "Accounts Payable", Amount: 200000 }];
+    //     } else {
+    //         return isSummary
+    //             ? [{ Category: "Revenue", Amount: 1200000 }, { Category: "Expenses", Amount: 800000 }, { Category: "Net Income", Amount: 400000 }]
+    //             : [{ ID: "R1", Category: "Service Revenue", Item: "Consulting", Amount: 1000000 }, { ID: "E1", Category: "Operating Expenses", Item: "Rent", Amount: 500000 }, { ID: "E2", Category: "Taxes", Item: "Income Tax", Amount: 300000 }];
+    //     }
+    // };
 
     const generateCSV = (data: any[]) => {
         if (!data.length) return;
@@ -101,9 +102,9 @@ export default function ReportsPage() {
         try {
             // 1. Reverted to previous endpoint selection (Tab-based only)
             const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-            const endpoint = selectedTab === "Profit & Loss" 
-                ? `${base}/profit-and-loss-statement`
-                : `${base}/all-reports`;
+            let endpoint = `${base}/all-reports`;
+            if (selectedTab === "Profit & Loss") endpoint = `${base}/profit-and-loss-statement`;
+            if (selectedTab === "Cashflow") endpoint = reportType === "Summary" ? `${base}/qb-cashflow` : `${base}/qb-cashflow-engine`;
 
             const response = await fetch(endpoint);
             if (!response.ok) throw new Error(`Failed to fetch reports from ${endpoint}`);
@@ -155,9 +156,9 @@ export default function ReportsPage() {
         try {
             // 1. Reverted to previous endpoint selection (Tab-based only)
             const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-            const endpoint = selectedTab === "Profit & Loss" 
-                ? `${base}/profit-and-loss-statement`
-                : `${base}/all-reports`;
+            let endpoint = `${base}/all-reports`;
+            if (selectedTab === "Profit & Loss") endpoint = `${base}/profit-and-loss-statement`;
+            if (selectedTab === "Cashflow") endpoint = reportType === "Summary" ? `${base}/qb-cashflow` : `${base}/qb-cashflow-engine`;
 
             const response = await fetch(endpoint);
             if (!response.ok) throw new Error(`Failed to fetch reports from ${endpoint}`);
@@ -235,7 +236,7 @@ export default function ReportsPage() {
 
                 {/* Tabs — matching reference segmented style */}
                 <div className="flex gap-6 mb-6 border-b border-border pb-px">
-                    {(["Balance Sheet", "Profit & Loss"] as const).map((tab) => (
+                    {(["Balance Sheet", "Profit & Loss", "Cashflow"] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => {
@@ -410,18 +411,53 @@ export default function ReportsPage() {
                         /* Preview Mode */
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className="h-[700px] flex flex-col">
-                                <FinancialReport
-                                    key={`${selectedTab}-${reportType}-${selectedClient}-${dateRange}-${accountingMethod}`}
-                                    data={selectedTab === "Balance Sheet" ? balanceSheetData : profitLossData}
-                                    detailedData={selectedTab === "Balance Sheet" ? balanceSheetDetailData : profitLossDetailData}
-                                    title={`${selectedTab}`}
-                                    subtitle={`As of March 27, 2026 • ${selectedClient ? customers.find(c => c.id === selectedClient)?.name : 'Consolidated'}`}
-                                    hideToolbar={true}
-                                    initialViewMode={reportType.toLowerCase() as "summary" | "detail"}
-                                    initialPeriod={dateRange}
-                                    initialMethod={accountingMethod as "Accrual" | "Cash"}
-                                    initialCustomRange={customRange}
-                                />
+                                {selectedTab === "Cashflow" ? (() => {
+                                    let startDate: string | undefined;
+                                    let endDate: string | undefined;
+
+                                    if (dateRange === "Custom Range") {
+                                        startDate = customRange.start;
+                                        endDate = customRange.end;
+                                    } else {
+                                        const now = new Date();
+                                        const y = now.getFullYear();
+                                        const m = String(now.getMonth() + 1).padStart(2, "0");
+                                        const d = String(now.getDate()).padStart(2, "0");
+                                        endDate = `${y}-${m}-${d}`;
+                                        
+                                        if (dateRange === "Today") {
+                                            startDate = `${y}-${m}-${d}`;
+                                        } else if (dateRange === "This Month") {
+                                            startDate = `${y}-${m}-01`;
+                                        } else if (dateRange === "This Quarter") {
+                                            const qMonth = String(Math.floor(now.getMonth() / 3) * 3 + 1).padStart(2, "0");
+                                            startDate = `${y}-${qMonth}-01`;
+                                        } else if (dateRange === "This Year") {
+                                            startDate = `${y}-01-01`;
+                                        }
+                                    }
+
+                                    return (
+                                        <CashflowReport 
+                                            startDate={startDate} 
+                                            endDate={endDate} 
+                                            selectedView={reportType} 
+                                        />
+                                    );
+                                })() : (
+                                    <FinancialReport
+                                        key={`${selectedTab}-${reportType}-${selectedClient}-${dateRange}-${accountingMethod}`}
+                                        data={selectedTab === "Balance Sheet" ? balanceSheetData : profitLossData}
+                                        detailedData={selectedTab === "Balance Sheet" ? balanceSheetDetailData : profitLossDetailData}
+                                        title={`${selectedTab}`}
+                                        subtitle={`As of March 27, 2026 • ${selectedClient ? customers.find(c => c.id === selectedClient)?.name : 'Consolidated'}`}
+                                        hideToolbar={true}
+                                        initialViewMode={reportType.toLowerCase() as "summary" | "detail"}
+                                        initialPeriod={dateRange}
+                                        initialMethod={accountingMethod as "Accrual" | "Cash"}
+                                        initialCustomRange={customRange}
+                                    />
+                                )}
                             </div>
 
                             {/* Actions bar */}

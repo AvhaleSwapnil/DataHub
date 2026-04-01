@@ -168,25 +168,40 @@ export function parseProfitAndLoss(data: any): FinancialLine[] {
   return parseSummaryRows(rows);
 }
 
-export async function fetchDashboardKPIs() {
+export async function fetchDashboardKPIs(
+  startDate?: string,
+  endDate?: string
+) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-  // Note: Assuming backend allows CORS as per instruction
-  const response = await fetch(`${baseUrl}/balance-sheet`);
+  // Build query params — backend expects start_date / end_date (snake_case)
+  const params = new URLSearchParams();
+  if (startDate) params.set("start_date", startDate);
+  if (endDate)   params.set("end_date",   endDate);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const url = `${baseUrl}/balance-sheet-detail${qs}`;
+
+  // ── Debug: confirm what URL is being called ──────────────────────────────
+  console.log("[fetchDashboardKPIs] API URL →", url);
+
+  const response = await fetch(url, {
+    cache: "no-store",   // ← bypass Next.js / browser HTTP cache on every filter change
+  });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch from backend: ${response.status}`);
+    throw new Error(`Failed to fetch balance-sheet-detail: ${response.status}`);
   }
 
+  // The /balance-sheet-detail endpoint returns the raw QuickBooks payload
   const json = await response.json();
-  const rows = json?.data?.Rows?.Row || [];
+  const rows = json?.data?.Rows?.Row || json?.Rows?.Row || [];
 
   const findValGroup = (arr: any[], group: string): number | null => {
     if (!arr) return null;
     for (const row of arr) {
       if (row.group === group) {
         const val = row.Summary?.ColData?.[1]?.value || row.ColData?.[1]?.value;
-        if (val !== undefined) return parseFloat(val);
+        if (val !== undefined) return parseFloat(String(val).replace(/,/g, ""));
       }
       if (row.Rows?.Row) {
         const val = findValGroup(row.Rows.Row, group);
@@ -199,10 +214,14 @@ export async function fetchDashboardKPIs() {
   const findValName = (arr: any[], nameSubstring: string): number | null => {
     if (!arr) return null;
     for (const row of arr) {
-      const rowName = row.Summary?.ColData?.[0]?.value || row.Header?.ColData?.[0]?.value || row.ColData?.[0]?.value || "";
+      const rowName =
+        row.Summary?.ColData?.[0]?.value ||
+        row.Header?.ColData?.[0]?.value ||
+        row.ColData?.[0]?.value ||
+        "";
       if (rowName.toLowerCase().includes(nameSubstring.toLowerCase())) {
         const val = row.Summary?.ColData?.[1]?.value || row.ColData?.[1]?.value;
-        if (val !== undefined) return parseFloat(val);
+        if (val !== undefined) return parseFloat(String(val).replace(/,/g, ""));
       }
       if (row.Rows?.Row) {
         const val = findValName(row.Rows.Row, nameSubstring);
@@ -212,57 +231,81 @@ export async function fetchDashboardKPIs() {
     return null;
   };
 
-  const rawAssets = findValGroup(rows, "TotalAssets");
-  const rawLiabilities = findValGroup(rows, "Liabilities");
-  const rawEquity = findValGroup(rows, "Equity");
-  const rawCurrentAssets = findValGroup(rows, "CurrentAssets");
-  const rawCurrentLiabilities = findValGroup(rows, "CurrentLiabilities");
-  const workingCapital = (rawCurrentAssets !== null && rawCurrentLiabilities !== null)
-    ? rawCurrentAssets - rawCurrentLiabilities
-    : null;
+  const rawAssets           = findValGroup(rows, "TotalAssets");
+  const rawLiabilities      = findValGroup(rows, "Liabilities");
+  const rawEquity           = findValGroup(rows, "Equity");
+  const rawCurrentAssets    = findValGroup(rows, "CurrentAssets");
+  const rawCurrentLiab      = findValGroup(rows, "CurrentLiabilities");
+  const workingCapital =
+    rawCurrentAssets !== null && rawCurrentLiab !== null
+      ? rawCurrentAssets - rawCurrentLiab
+      : null;
 
-  const rawBank = findValGroup(rows, "BankAccounts");
-  const rawAR = findValGroup(rows, "AR");
+  const rawBank      = findValGroup(rows, "BankAccounts");
+  const rawAR        = findValGroup(rows, "AR");
   const rawInventory = findValName(rows, "Inventory");
-  const rawAP = findValGroup(rows, "AP");
-  const rawLongTerm = findValGroup(rows, "LongTermLiabilities");
+  const rawAP        = findValGroup(rows, "AP");
+  const rawLongTerm  = findValGroup(rows, "LongTermLiabilities");
   const rawNetIncome = findValGroup(rows, "NetIncome");
 
-  // Format purely based on API return. Zero if missing, no mock defaults!
   const fmt = (num: number | null) =>
-    "$" + (num || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    "$" +
+    (num || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
   return [
-    { label: "Total Revenue", value: fmt(0), desc: "Total gross income", icon: DollarSign, color: "#8bc53d" },
-    { label: "Total Expenses", value: fmt(0), desc: "Total operating costs", icon: Wallet, color: "#C62026" },
-    { label: "Net Profit", value: fmt(rawNetIncome), desc: "Bottom-line earnings", icon: TrendingUp, color: "#00648F" },
-    { label: "Total Assets", value: fmt(rawAssets), desc: "Company's total valuation", icon: Building2, color: "#8bc53d" },
-    { label: "Total Liabilities", value: fmt(rawLiabilities), desc: "Current total obligations", icon: CreditCard, color: "#F68C1F" },
-    { label: "Total Equity", value: fmt(rawEquity), desc: "Net asset value", icon: Scale, color: "#00648F" },
-    { label: "Working Capital", value: fmt(workingCapital), desc: "Available operating liquidity", icon: RefreshCw, color: "#8bc53d" },
-    { label: "Cash & Bank Balance", value: fmt(rawBank), desc: "Liquid funds available", icon: PiggyBank, color: "#8bc53d" },
-    { label: "Account Receivable", value: fmt(rawAR), desc: "Unpaid client invoices", icon: ArrowDownToLine, color: "#00B0F0" },
-    { label: "Inventory Value", value: fmt(rawInventory), desc: "Current stock valuation", icon: Package, color: "#6D6E71" },
-    { label: "Account Payable", value: fmt(rawAP), desc: "Outstanding vendor bills", icon: ArrowUpFromLine, color: "#C62026" },
-    { label: "Long-Term Debt", value: fmt(rawLongTerm), desc: "Non-current liabilities", icon: Landmark, color: "#C62026" },
+    { label: "Total Revenue",      value: fmt(0),            desc: "Total gross income",            icon: DollarSign,     color: "#8bc53d" },
+    { label: "Total Expenses",     value: fmt(0),            desc: "Total operating costs",         icon: Wallet,         color: "#C62026" },
+    { label: "Net Profit",         value: fmt(rawNetIncome), desc: "Bottom-line earnings",          icon: TrendingUp,     color: "#00648F" },
+    { label: "Total Assets",       value: fmt(rawAssets),    desc: "Company's total valuation",    icon: Building2,      color: "#8bc53d" },
+    { label: "Total Liabilities",  value: fmt(rawLiabilities), desc: "Current total obligations",  icon: CreditCard,     color: "#F68C1F" },
+    { label: "Total Equity",       value: fmt(rawEquity),    desc: "Net asset value",               icon: Scale,          color: "#00648F" },
+    { label: "Working Capital",    value: fmt(workingCapital), desc: "Available operating liquidity", icon: RefreshCw,    color: "#8bc53d" },
+    { label: "Cash & Bank Balance",value: fmt(rawBank),      desc: "Liquid funds available",        icon: PiggyBank,      color: "#8bc53d" },
+    { label: "Account Receivable", value: fmt(rawAR),        desc: "Unpaid client invoices",        icon: ArrowDownToLine,color: "#00B0F0" },
+    { label: "Inventory Value",    value: fmt(rawInventory), desc: "Current stock valuation",       icon: Package,        color: "#6D6E71" },
+    { label: "Account Payable",    value: fmt(rawAP),        desc: "Outstanding vendor bills",      icon: ArrowUpFromLine,color: "#C62026" },
+    { label: "Long-Term Debt",     value: fmt(rawLongTerm),  desc: "Non-current liabilities",       icon: Landmark,       color: "#C62026" },
   ];
 }
 
-export async function fetchFinancialTrends() {
+export async function fetchFinancialTrends(
+  startDate?: string,
+  endDate?: string
+) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  const response = await fetch(`${baseUrl}/profit-and-loss`);
 
+  // Build query params — backend expects start_date / end_date (snake_case)
+  const params = new URLSearchParams();
+  if (startDate) params.set("start_date", startDate);
+  if (endDate)   params.set("end_date",   endDate);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const url = `${baseUrl}/profit-and-loss${qs}`;
+
+  // ── Debug: confirm what URL is being called ──────────────────────────────
+  console.log("[fetchFinancialTrends] API URL →", url);
+
+  const response = await fetch(url, {
+    cache: "no-store",   // ← bypass Next.js / browser HTTP cache on every filter change
+  });
   if (!response.ok) return [];
 
   const json = await response.json();
-  const rows = json?.data?.Rows?.Row || [];
+  const rows = json?.data?.Rows?.Row || json?.Rows?.Row || [];
 
-  // Helper to find income/expenses
   const findTotal = (arr: any[], nameSubstring: string): number => {
     for (const row of arr) {
-      const rowName = row.Summary?.ColData?.[0]?.value || row.Header?.ColData?.[0]?.value || row.ColData?.[0]?.value || "";
+      const rowName =
+        row.Summary?.ColData?.[0]?.value ||
+        row.Header?.ColData?.[0]?.value ||
+        row.ColData?.[0]?.value ||
+        "";
       if (rowName.toLowerCase().includes(nameSubstring.toLowerCase())) {
-        return parseFloat(row.Summary?.ColData?.[1]?.value || row.ColData?.[1]?.value || "0");
+        return parseFloat(
+          String(row.Summary?.ColData?.[1]?.value || row.ColData?.[1]?.value || "0").replace(/,/g, "")
+        );
       }
       if (row.Rows?.Row) {
         const val = findTotal(row.Rows.Row, nameSubstring);
@@ -272,15 +315,21 @@ export async function fetchFinancialTrends() {
     return 0;
   };
 
-  const totalIncome = findTotal(rows, "Income");
+  const totalIncome   = findTotal(rows, "Income");
   const totalExpenses = findTotal(rows, "Expenses");
 
-  // For now, distribute totals across last 6 months to keep chart alive
-  // In a real scenario, we'd fetch monthly P&L items
-  const months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
-  return months.map((m, i) => ({
-    name: m,
-    revenue: (totalIncome / 6) * (0.8 + Math.random() * 0.4),
-    expenses: (totalExpenses / 6) * (0.8 + Math.random() * 0.4)
+  // Distribute totals across a rolling 6-month window anchored to the selected range.
+  // When the backend adds monthly breakdown, replace this with per-month rows.
+  const now        = endDate ? new Date(endDate + "T00:00:00Z") : new Date();
+  const months: string[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(d.toLocaleString("en-US", { month: "short" }));
+  }
+
+  return months.map((m) => ({
+    name:     m,
+    revenue:  (totalIncome   / 6) * (0.8 + Math.random() * 0.4),
+    expenses: (totalExpenses / 6) * (0.8 + Math.random() * 0.4),
   }));
 }
