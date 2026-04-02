@@ -7,28 +7,12 @@ import { cn } from "@/lib/utils";
 import {
   FileText,
   TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
-  DollarSign,
-  Wallet,
-  Receipt,
   PieChart,
   Search,
   ChevronDown,
-  Building2,
-  CreditCard,
-  Scale,
-  RefreshCw,
-  PiggyBank,
-  ArrowDownToLine,
-  Package,
-  ArrowUpFromLine,
-  Landmark,
-  Users,
   CheckCircle2,
   Clock,
   AlertCircle,
-  Calendar,
   BarChart3,
   CalendarDays,
   ChevronLeft,
@@ -50,7 +34,7 @@ import {
 } from "@/services/reportService";
 import { fetchCustomers } from "@/services/customerService";
 import { fetchInvoices } from "@/services/invoiceService";
-import { getProfitAndLoss } from "@/services/financialReportService";
+import { getProfitAndLoss } from "@/services/profitAndLossService";
 import { exportToCSV } from "@/lib/exportCSV";
 
 // Aggregation types
@@ -792,19 +776,19 @@ export default function DashboardPage() {
                       dy={10}
                       angle={
                         aggregationType === "monthly" &&
-                        chartDataState.length > 6
+                          chartDataState.length > 6
                           ? -45
                           : 0
                       }
                       textAnchor={
                         aggregationType === "monthly" &&
-                        chartDataState.length > 6
+                          chartDataState.length > 6
                           ? "end"
                           : "middle"
                       }
                       height={
                         aggregationType === "monthly" &&
-                        chartDataState.length > 6
+                          chartDataState.length > 6
                           ? 60
                           : 30
                       }
@@ -830,10 +814,10 @@ export default function DashboardPage() {
                         fontSize: "13px",
                         padding: "10px 14px",
                       }}
-                      formatter={(value: number) => [
-                        `$${value.toLocaleString()}`,
-                        undefined,
-                      ]}
+                      formatter={(value) => {
+                        const num = typeof value === 'number' ? value : 0;
+                        return [`$${num.toLocaleString()}`, undefined] as [string, undefined];
+                      }}
                     />
                     <Legend
                       verticalAlign="top"
@@ -974,126 +958,126 @@ export default function DashboardPage() {
                 <tbody className="divide-y divide-border">
                   {isLoading
                     ? Array.from({ length: 5 }).map((_, i) => (
-                        <tr key={i}>
-                          <td colSpan={6} className="py-4 px-4">
-                            <div className="skeleton h-8 w-full rounded-md" />
-                          </td>
-                        </tr>
-                      ))
+                      <tr key={i}>
+                        <td colSpan={6} className="py-4 px-4">
+                          <div className="skeleton h-8 w-full rounded-md" />
+                        </td>
+                      </tr>
+                    ))
                     : invoicesData
-                        .filter((inv: any) => {
-                          const s = searchTerm.toLowerCase();
-                          const idMatch = (inv.DocNumber || inv.id || "")
-                            .toLowerCase()
-                            .includes(s);
-                          const customerMatch = (
-                            inv.CustomerRef?.name ||
-                            inv.customer ||
-                            ""
-                          )
-                            .toLowerCase()
-                            .includes(s);
-                          return idMatch || customerMatch;
-                        })
-                        .slice(0, 5)
-                        .map((inv: any, i: number) => {
-                          const amount = inv.TotalAmt || inv.amount || 0;
-                          const balance = inv.Balance || inv.balance || 0;
+                      .filter((inv: any) => {
+                        const s = searchTerm.toLowerCase();
+                        const idMatch = (inv.DocNumber || inv.id || "")
+                          .toLowerCase()
+                          .includes(s);
+                        const customerMatch = (
+                          inv.CustomerRef?.name ||
+                          inv.customer ||
+                          ""
+                        )
+                          .toLowerCase()
+                          .includes(s);
+                        return idMatch || customerMatch;
+                      })
+                      .slice(0, 5)
+                      .map((inv: any, i: number) => {
+                        const amount = inv.TotalAmt || inv.amount || 0;
+                        const balance = inv.Balance || inv.balance || 0;
 
-                          let status = "open";
-                          if (balance === 0) status = "paid";
-                          else if (
-                            inv.DueDate &&
-                            new Date(inv.DueDate) < new Date()
-                          )
-                            status = "overdue";
+                        let status = "open";
+                        if (balance === 0) status = "paid";
+                        else if (
+                          inv.DueDate &&
+                          new Date(inv.DueDate) < new Date()
+                        )
+                          status = "overdue";
 
-                          const statusConfig = (s: string) => {
-                            const cfgs: any = {
-                              paid: {
-                                label: "Paid",
-                                icon: CheckCircle2,
-                                color: "bg-[#8bc53d] text-white",
-                              },
-                              open: {
-                                label: "Open",
-                                icon: Clock,
-                                color: "bg-[#00648F] text-white",
-                              },
-                              overdue: {
-                                label: "Overdue",
-                                icon: AlertCircle,
-                                color: "bg-[#C62026] text-white",
-                              },
-                              draft: {
-                                label: "Draft",
-                                icon: FileText,
-                                color: "bg-[#6D6E71] text-white",
-                              },
-                            };
-                            return cfgs[s.toLowerCase()] || cfgs.open;
+                        const statusConfig = (s: string) => {
+                          const cfgs: any = {
+                            paid: {
+                              label: "Paid",
+                              icon: CheckCircle2,
+                              color: "bg-[#8bc53d] text-white",
+                            },
+                            open: {
+                              label: "Open",
+                              icon: Clock,
+                              color: "bg-[#00648F] text-white",
+                            },
+                            overdue: {
+                              label: "Overdue",
+                              icon: AlertCircle,
+                              color: "bg-[#C62026] text-white",
+                            },
+                            draft: {
+                              label: "Draft",
+                              icon: FileText,
+                              color: "bg-[#6D6E71] text-white",
+                            },
                           };
-                          const config = statusConfig(status);
+                          return cfgs[s.toLowerCase()] || cfgs.open;
+                        };
+                        const config = statusConfig(status);
 
-                          return (
-                            <tr
-                              key={inv.id || i}
-                              className="group hover:bg-bg-page/50 transition-colors"
-                            >
-                              <td className="py-3 px-6">
-                                <div className="flex flex-col">
-                                  <span className="text-[14px] font-medium text-text-primary">
-                                    #
-                                    {inv.DocNumber ||
-                                      inv.id ||
-                                      `INV-00${i + 1}`}
-                                  </span>
-                                  <span className="text-[12px] text-text-muted">
-                                    {new Date(
-                                      inv.MetaData?.CreateTime ||
-                                        inv.date ||
-                                        Date.now(),
-                                    ).toLocaleDateString("en-US", {
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                    })}
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4 text-[14px] text-text-secondary">
-                                {inv.CustomerRef?.name ||
-                                  inv.customer ||
-                                  "Unknown Client"}
-                              </td>
-                              <td className="py-3 px-4 text-[14px] text-text-secondary">
-                                {inv.DueDate || inv.dueDate || "N/A"}
-                              </td>
-                              <td className="py-3 px-4 text-right text-[14px] font-semibold text-text-primary tabular-nums">
-                                $
-                                {amount.toLocaleString("en-US", {
-                                  minimumFractionDigits: 2,
-                                })}
-                              </td>
-                              <td className="py-3 px-4 text-right text-[14px] font-medium text-text-primary tabular-nums">
-                                $
-                                {balance.toLocaleString("en-US", {
-                                  minimumFractionDigits: 2,
-                                })}
-                              </td>
-                              <td className="py-3 px-4 text-center">
-                                <div
-                                  className={cn(
-                                    "inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[12px] font-bold capitalize min-w-[80px]",
-                                    config.color,
-                                  )}
-                                >
-                                  {config.label}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
+                        return (
+                          <tr
+                            key={inv.id || i}
+                            className="group hover:bg-bg-page/50 transition-colors"
+                          >
+                            <td className="py-3 px-6">
+                              <div className="flex flex-col">
+                                <span className="text-[14px] font-medium text-text-primary">
+                                  #
+                                  {inv.DocNumber ||
+                                    inv.id ||
+                                    `INV-00${i + 1}`}
+                                </span>
+                                <span className="text-[12px] text-text-muted">
+                                  {new Date(
+                                    inv.MetaData?.CreateTime ||
+                                    inv.date ||
+                                    Date.now(),
+                                  ).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-[14px] text-text-secondary">
+                              {inv.CustomerRef?.name ||
+                                inv.customer ||
+                                "Unknown Client"}
+                            </td>
+                            <td className="py-3 px-4 text-[14px] text-text-secondary">
+                              {inv.DueDate || inv.dueDate || "N/A"}
+                            </td>
+                            <td className="py-3 px-4 text-right text-[14px] font-semibold text-text-primary tabular-nums">
+                              $
+                              {amount.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                            <td className="py-3 px-4 text-right text-[14px] font-medium text-text-primary tabular-nums">
+                              $
+                              {balance.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <div
+                                className={cn(
+                                  "inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[12px] font-bold capitalize min-w-[80px]",
+                                  config.color,
+                                )}
+                              >
+                                {config.label}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                 </tbody>
               </table>
             </div>

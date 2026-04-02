@@ -280,35 +280,35 @@ export default function InvoicesPage() {
                               {status.label}
                             </div>
                           </td>
-                           <td className="py-3 px-4 text-right">
-                              <button 
-                                onClick={async () => {
-                                  setIsDetailLoading(true);
-                                  const res = await getInvoiceByDocNumber(invoice.invoiceNumber);
-                                  const detail = res?.data || res;
-                                  const matchingCustomer = customers.find((c: any) => c.name === invoice.customer);
-                                  
-                                  setEditingInvoice({
-                                    ...invoice,
-                                    ...detail,
-                                    docNumber: detail?.DocNumber || invoice.invoiceNumber,
-                                    privateNote: detail?.PrivateNote || invoice.privateNote || "",
-                                    customerId: (invoice as any).customerId || detail?.CustomerRef?.value || (matchingCustomer as any)?.id || (matchingCustomer as any)?.Id || "",
-                                    email: detail?.BillEmail?.Address || "N/A",
-                                    terms: detail?.SalesTermRef?.name || "N/A",
-                                    currency: detail?.CurrencyRef?.name || "USD",
-                                    txnDate: detail?.TxnDate || invoice.date,
-                                    totalAmt: detail?.TotalAmt || invoice.amount,
-                                  });
-                                  setIsDetailLoading(false);
-                                  setIsEditModalOpen(true);
-                                }}
-                                disabled={isDetailLoading}
-                                className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-border rounded-lg text-[12px] font-semibold text-text-primary hover:bg-bg-page hover:border-primary/30 transition-all shadow-sm bg-white ml-auto disabled:opacity-50"
-                              >
-                                <Eye size={14} className="text-text-muted" />
-                                <span>Doc</span>
-                              </button>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={async () => {
+                                setIsDetailLoading(true);
+                                const res = await getInvoiceByDocNumber(invoice.invoiceNumber);
+                                const detail = res?.data || res;
+                                const matchingCustomer = customers.find((c: any) => c.name === invoice.customer);
+
+                                setEditingInvoice({
+                                  ...invoice,
+                                  ...detail,
+                                  docNumber: detail?.DocNumber || invoice.invoiceNumber,
+                                  privateNote: detail?.PrivateNote || invoice.privateNote || "",
+                                  customerId: (invoice as any).customerId || detail?.CustomerRef?.value || (matchingCustomer as any)?.id || (matchingCustomer as any)?.Id || "",
+                                  email: detail?.BillEmail?.Address || "N/A",
+                                  terms: detail?.SalesTermRef?.name || "N/A",
+                                  currency: detail?.CurrencyRef?.name || "USD",
+                                  txnDate: detail?.TxnDate || invoice.date,
+                                  totalAmt: detail?.TotalAmt || invoice.amount,
+                                });
+                                setIsDetailLoading(false);
+                                setIsEditModalOpen(true);
+                              }}
+                              disabled={isDetailLoading}
+                              className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-border rounded-lg text-[12px] font-semibold text-text-primary hover:bg-bg-page hover:border-primary/30 transition-all shadow-sm bg-white ml-auto disabled:opacity-50"
+                            >
+                              <Eye size={14} className="text-text-muted" />
+                              <span>Doc</span>
+                            </button>
                           </td>
                         </tr>
                       );
@@ -354,11 +354,11 @@ export default function InvoicesPage() {
           { name: "terms", label: "Sales Terms", type: "text", icon: Clock },
           { name: "currency", label: "Currency", type: "text", icon: Globe },
           { name: "privateNote", label: "Note (Private)", type: "textarea", icon: FileText },
-          { 
-            name: "customerId", 
-            label: "Client", 
-            type: "select", 
-            icon: User, 
+          {
+            name: "customerId",
+            label: "Client",
+            type: "select",
+            icon: User,
             options: customers.map((c: any) => ({ label: c.name, value: c.id || c.Id }))
           },
           { name: "totalAmt", label: "Total Amount", type: "text", icon: DollarSign },
