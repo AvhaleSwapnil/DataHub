@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { Fragment, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
-import { DetailedFinancialData, AccountDetail, Transaction } from "@/types/financial-details";
+import { formatCurrency } from "@/lib/utils";
+import {
+  DetailedFinancialData,
+  AccountDetail,
+  Transaction,
+} from "@/types/financial-details";
 
-interface FinancialDetailsProps {
+interface CashflowDetailProps {
   data: DetailedFinancialData;
   title: string;
   subtitle: string;
 }
 
-const TransactionRow = ({ tx }: { tx: Transaction }) => {
+function TransactionRow({ tx }: { tx: Transaction }) {
   return (
     <tr className="hover:bg-bg-page/50 border-b border-border-light transition-colors">
       <td className="py-2.5 px-4 text-[13px] text-text-secondary min-w-[100px]">{tx.date}</td>
@@ -28,32 +32,35 @@ const TransactionRow = ({ tx }: { tx: Transaction }) => {
       </td>
     </tr>
   );
-};
+}
 
-const AccountSection = ({ account }: { account: AccountDetail }) => {
+function AccountSection({ account }: { account: AccountDetail }) {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
     <>
       <tr
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen((prev) => !prev)}
         className="cursor-pointer bg-bg-page/30 hover:bg-bg-page/50 transition-colors border-b border-border-light"
       >
         <td colSpan={6} className="py-3 px-4">
           <div className="flex items-center gap-2 ml-4">
-            {isOpen ? <ChevronDown size={14} className="text-text-muted" /> : <ChevronRight size={14} className="text-text-muted" />}
+            {isOpen ? (
+              <ChevronDown size={14} className="text-text-muted" />
+            ) : (
+              <ChevronRight size={14} className="text-text-muted" />
+            )}
             <span className="text-[14px] font-semibold text-text-primary">{account.name}</span>
           </div>
         </td>
         <td colSpan={2} />
       </tr>
 
-      {isOpen && account.transactions.map((tx) => (
-        <TransactionRow key={tx.id} tx={tx} />
-      ))}
+      {isOpen
+        ? account.transactions.map((tx) => <TransactionRow key={tx.id} tx={tx} />)
+        : null}
 
-      {/* Total for Account */}
-      {isOpen && (
+      {isOpen ? (
         <tr className="bg-bg-page/10 border-b border-border-light">
           <td colSpan={6} className="py-3 px-4 text-right">
             <span className="text-[12px] font-medium text-text-muted italic">Total for {account.name}</span>
@@ -63,16 +70,19 @@ const AccountSection = ({ account }: { account: AccountDetail }) => {
           </td>
           <td />
         </tr>
-      )}
+      ) : null}
     </>
   );
-};
+}
 
-export default function FinancialDetails({ data, title, subtitle }: FinancialDetailsProps) {
+export default function CashflowDetail({
+  data,
+  title,
+  subtitle,
+}: CashflowDetailProps) {
   return (
     <div className="flex-1 overflow-y-auto bg-bg-page/50 p-6 lg:p-10">
       <div className="max-w-6xl mx-auto bg-bg-card border border-border min-h-[1000px] flex flex-col rounded-sm shadow-card-hover transition-all">
-        {/* Detail Header */}
         <div className="flex flex-col items-center py-12 border-b border-border/60 mb-8 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
           <h1 className="text-[20px] font-bold text-text-primary mb-1">Sage Healthy RCM, LLC</h1>
@@ -84,15 +94,20 @@ export default function FinancialDetails({ data, title, subtitle }: FinancialDet
           </div>
         </div>
 
-        {/* Action Toolbar Inside Context */}
         <div className="px-8 pb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-[13px] text-text-muted font-medium">Transactions:</span>
             <span className="text-[13px] font-semibold text-text-primary bg-bg-page px-2 py-0.5 rounded-md border border-border">
-              {data.groups.reduce((acc, g) => acc + g.accounts.reduce((a, acco) => a + acco.transactions.length, 0), 0)}
+              {data.groups.reduce(
+                (total, group) =>
+                  total + group.accounts.reduce((count, account) => count + account.transactions.length, 0),
+                0
+              )}
             </span>
           </div>
-          <button className="text-[13px] font-medium text-primary hover:text-primary-dark transition-colors">Expand All Groups</button>
+          <button className="text-[13px] font-medium text-primary hover:text-primary-dark transition-colors">
+            Expand All Groups
+          </button>
         </div>
 
         <div className="flex-1 overflow-x-auto">
@@ -120,7 +135,6 @@ export default function FinancialDetails({ data, title, subtitle }: FinancialDet
                   {group.accounts.map((account) => (
                     <AccountSection key={account.id} account={account} />
                   ))}
-                  {/* Total for Group */}
                   <tr className="bg-bg-page/60 border-b-2 border-text-primary">
                     <td colSpan={6} className="py-4 px-6 text-right">
                       <span className="text-[14px] font-semibold text-text-primary">Total for {group.name}</span>
@@ -136,7 +150,6 @@ export default function FinancialDetails({ data, title, subtitle }: FinancialDet
           </table>
         </div>
 
-        {/* Footer info */}
         <div className="p-10 text-center bg-bg-page border-t border-border mt-auto">
           <p className="text-[12px] text-text-muted font-medium mb-4">AccountHub Financial Intelligence Engine</p>
           <div className="flex items-center justify-center gap-8">
@@ -146,7 +159,7 @@ export default function FinancialDetails({ data, title, subtitle }: FinancialDet
             </div>
             <div className="flex flex-col items-center">
               <span className="text-[10px] text-text-muted uppercase tracking-wider">Data Source</span>
-              <span className="text-[11px] font-semibold text-text-primary">QuickBooks API Pipeline</span>
+              <span className="text-[11px] font-semibold text-text-primary">QuickBooks Cash Flow Engine</span>
             </div>
           </div>
         </div>

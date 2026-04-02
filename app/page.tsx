@@ -7,24 +7,9 @@ import { cn } from "@/lib/utils";
 import {
   FileText,
   TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
-  DollarSign,
-  Wallet,
-  Receipt,
   PieChart,
   Search,
   ChevronDown,
-  Building2,
-  CreditCard,
-  Scale,
-  RefreshCw,
-  PiggyBank,
-  ArrowDownToLine,
-  Package,
-  ArrowUpFromLine,
-  Landmark,
-  Users,
   CheckCircle2,
   Clock,
   AlertCircle
@@ -38,12 +23,11 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-  Cell,
 } from "recharts";
 import { fetchDashboardKPIs, fetchFinancialTrends } from "@/services/reportService";
 import { fetchCustomers } from "@/services/customerService";
 import { fetchInvoices } from "@/services/invoiceService";
-import { getProfitAndLoss } from "@/services/financialReportService";
+import { getProfitAndLoss } from "@/services/profitAndLossService";
 import { exportToCSV } from "@/lib/exportCSV";
 
 

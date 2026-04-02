@@ -255,3 +255,4 @@ export async function getCashflowDetail(
     grandTotal: 4063.52
   };
 }
+
